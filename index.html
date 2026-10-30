@@ -47,7 +47,7 @@ async function go(loc){
  else if(PLACES[loc])note="That’s not the spot for your current clue. Keep looking!";
  else note="Code not recognized. Check it and try again.";
  r()}
-const sb=()=>sel?`<div class="card"><b>Found it! Snap a team selfie at the ${sel}.</b><label class="btn">Take selfie<input type="file" accept="image/*" id="sf" hidden></label><button class="g" id="sk">Skip</button></div>`:"";
+const sb=()=>sel?`<div class="card"><b>Found it! Snap a team selfie at the ${sel}.</b><label class="btn">Take selfie<input type="file" accept="image/*" capture="user" id="sf" hidden></label><button class="g" id="sk">Skip</button></div>`:"";
 function bs(){if(!sel)return;
  $("sf").onchange=async e=>{const f=e.target.files[0],p=sel;if(f){sel=null;if(!await snap(f,p)){sel=p;r()}}};
  $("sk").onclick=()=>{sel=null;r()}}
@@ -59,7 +59,7 @@ function r(){
   $("go").onclick=()=>login($("c").value);return}
  if(!T){A.innerHTML="<p>Loading…</p>";return}
  const tm=TEAMS[code],rt=tm.route;
- if(!T.photoDone){A.innerHTML=`<div class="t">${TURKEY}</div><h2>${tm.name}, smile!</h2><p>Take your team photo together before the hunt starts.</p>${msg}<label class="btn">Take team photo<input type="file" accept="image/*" id="f" hidden></label>`;
+ if(!T.photoDone){A.innerHTML=`<div class="t">${TURKEY}</div><h2>${tm.name}, smile!</h2><p>Take your team photo together before the hunt starts.</p>${msg}<label class="btn">Take team photo<input type="file" accept="image/*" capture="user" id="f" hidden></label>`;
   $("f").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"team"))await updateDoc(ref(),{photoDone:true})};return}
  if(!G.started||now<G.startAt){A.innerHTML=G.started?`<div class="t">${TURKEY}</div><h1>Get ready…</h1><div class="tm">${Math.ceil((G.startAt-now)/1000)}</div>`:`<div class="t">${TURKEY}</div><h2>You’re in, ${tm.name}!</h2><p>Waiting for the host to start the hunt.</p>`;return}
  if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div>`;bs();return}
@@ -70,8 +70,10 @@ function r(){
  $("tg").onclick=()=>{pend=$("tc").value.trim().toLowerCase();if(pend)r()};
  $("sw").onclick=()=>{localStorage.removeItem("team");if(unT)unT();code=null;T=null;sel=null;note="";r()};
  tick()}
+let cd=false;
 function tick(){const now=Date.now();
- if(G.started&&now<G.startAt)return r();
+ if(G.started&&now<G.startAt){cd=true;return r()}
+ if(cd){cd=false;return r()}
  if(!T||!$("tm"))return;
  $("tm").textContent=fmt((now-(T.t0||G.startAt))/1000);
  const b=$("hb");if(b){const w=T.h?HINT_WAIT-(now-T.th)/1000:0;b.disabled=w>0;b.textContent=w>0?"Next hint in "+fmt(w):"Need a hint?"}}
