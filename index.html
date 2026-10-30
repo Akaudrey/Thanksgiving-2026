@@ -38,7 +38,7 @@ function login(c){c=c.trim().toLowerCase();if(!TEAMS[c]){note="Team code not fou
  code=c;localStorage.setItem("team",c);note="";listen()}
 const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onerror=no;im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.8))};im.src=URL.createObjectURL(f)});
 async function snap(f,place){note="Sending photo…";r();
- try{await addDoc(collection(db,"photos"),{team:code,name:TEAMS[code].name,place,ts:Date.now(),img:await shrink(f)});note="";r();return true}
+ try{const d={team:code,name:TEAMS[code].name,place,ts:Date.now(),img:await shrink(f)};await addDoc(collection(db,"photos"),d);await setDoc(doc(db,"latest",code),d);note="";r();return true}
  catch(e){note="Photo did not send. Try again.";r();return false}}
 async function go(loc){
  const rt=TEAMS[code].route;if(T.i>=rt.length)return;

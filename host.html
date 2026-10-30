@@ -34,7 +34,7 @@ function r(){
  $("rs").onclick=async()=>{
   if(Date.now()-arm>4000){arm=Date.now();busy="Tap again to erase everything";return r()}
   arm=0;busy="Erasing…";r();
-  for(const c of ["teams","photos","chat"]){const s=await getDocs(collection(db,c));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)))}
+  for(const c of ["teams","photos","latest","chat"]){const s=await getDocs(collection(db,c));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)))}
   await setDoc(doc(db,"game","state"),{started:false,startAt:0});busy="";r()}}
 r();
 </script></body></html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoreboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffd23f;--fg:#3b1d0a;--card:#fff8e7;--ac:#ff8a1f;--bd:#3b1d0a}
+*{box-sizing:border-box}
+html{font-size:1.15vw}
+body{margin:0;height:100vh;overflow:hidden;background:var(--bg) radial-gradient(rgba(255,138,31,.25) .3rem,transparent .3rem) 0 0/2.2rem 2.2rem;color:var(--fg);font:700 1rem/1.3 Nunito,system-ui,sans-serif}
+#app{display:grid;grid-template-columns:2fr 1fr;grid-template-rows:auto 1fr 17vh;gap:1rem;padding:1rem;height:100vh}
+header{grid-column:1/3;display:flex;justify-content:space-between;align-items:center}
+h1{font:400 3rem/1 "Lilita One",Impact,sans-serif;margin:0;text-shadow:.15rem .15rem 0 var(--ac)}
+#st{font:400 2rem "Lilita One",sans-serif}
+.box{background:var(--card);border:.25rem solid var(--bd);border-radius:1.2rem;box-shadow:.4rem .4rem 0 var(--bd);overflow:hidden;min-height:0;position:relative}
+#feat img{width:100%;height:100%;object-fit:cover;display:block}
+.cap{position:absolute;left:0;right:0;bottom:0;padding:.7rem 1.2rem;background:rgba(0,0,0,.65);color:#fff;font:400 2.4rem "Lilita One",sans-serif}
+.empty{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;font:400 2.5rem "Lilita One",sans-serif;text-align:center}
+.pop{animation:pop .8s ease-out}
+@keyframes pop{from{transform:scale(.8) rotate(-3deg);opacity:0}to{transform:none;opacity:1}}
+#board{padding:.8rem 1.2rem}
+.row{margin:.5rem 0 .9rem}
+.rh{display:flex;justify-content:space-between;font-size:1.5rem}
+.seg{display:flex;gap:.25rem;margin:.3rem 0}.seg i{flex:1;height:1rem;background:rgba(0,0,0,.15);border-radius:.3rem}
+small{font-size:1rem;opacity:.8}
+#tiles{grid-column:1/3;display:grid;grid-template-columns:repeat(5,1fr);gap:1rem}
+.tile{border:.3rem solid;border-radius:1rem;overflow:hidden;position:relative;background:var(--card)}
+.tile img{width:100%;height:100%;object-fit:cover;display:block}
+.tile span{position:absolute;left:0;bottom:0;padding:.1rem .8rem;color:#fff;font:400 1.3rem "Lilita One",sans-serif;border-top-right-radius:.6rem}
+#ban{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);color:#fff;font:400 5rem/1.1 "Lilita One",sans-serif;text-align:center;padding:2rem;z-index:5}
+</style></head><body>
+<div id="app">
+ <header><h1>Thanksgiving Treasure Hunt</h1><div id="st"></div></header>
+ <div class="box" id="feat"></div>
+ <div class="box" id="board"></div>
+ <div id="tiles"></div>
+</div>
+<div id="ban"></div>
+<script type="module">
+import {db,doc,collection,onSnapshot,TEAMS} from "./config.js";
+const $=i=>document.getElementById(i);
+const COL={owl:"#7F77DD",fox:"#D85A30",bear:"#BA7517",wolf:"#1D9E75",hawk:"#378ADD"};
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+let G={},TS={},LT={},featTs=0,first=true,ann=new Set(),bt=0;
+
+onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{}});
+onSnapshot(collection(db,"teams"),s=>{
+ TS={};s.docs.forEach(d=>TS[d.id]=d.data());
+ s.docs.forEach(d=>{const t=d.data();
+  if(t.done&&!ann.has(d.id)){ann.add(d.id);if(!first)banner(t.name+" finished in "+fmt((t.done-G.startAt)/1000)+"!")}
+  if(!t.done)ann.delete(d.id)});
+ first=false});
+onSnapshot(collection(db,"latest"),s=>{LT={};s.docs.forEach(d=>LT[d.id]=d.data());photos()});
+
+function banner(t){const b=$("ban");b.textContent=t;b.style.display="flex";clearTimeout(bt);bt=setTimeout(()=>b.style.display="none",9000)}
+
+function photos(){
+ const f=Object.values(LT).sort((a,b)=>b.ts-a.ts)[0],F=$("feat");
+ if(!f)F.innerHTML=`<div class="empty"><div style="font-size:8rem">🦃</div>Waiting for photos…</div>`;
+ else{const nw=f.ts!==featTs;featTs=f.ts;
+  F.innerHTML=`<img src="${f.img}" alt=""><div class="cap">${f.name}${f.place==="team"?" team photo":" at the "+f.place}</div>`;
+  if(nw){F.classList.remove("pop");void F.offsetWidth;F.classList.add("pop")}}
+ $("tiles").innerHTML=Object.keys(TEAMS).map(c=>{const l=LT[c];
+  return `<div class="tile" style="border-color:${COL[c]}">${l?`<img src="${l.img}" alt="">`:""}<span style="background:${COL[c]}">${TEAMS[c].name}</span></div>`}).join("")}
+
+function board(){
+ const now=Date.now(),go=G.started&&G.startAt<=now;
+ $("st").textContent=!G.started?"Waiting to start":go?"Hunt in progress":"Starting in "+Math.ceil((G.startAt-now)/1000);
+ const rows=Object.keys(TEAMS).map(c=>({c,n:TEAMS[c].route.length,t:TS[c]||{i:0,hintsTotal:0,t0:0,done:0}}));
+ rows.sort((a,b)=>{const x=a.t,y=b.t;if(!!x.done!==!!y.done)return x.done?-1:1;if(x.done)return x.done-y.done;return(y.i-x.i)||((x.t0||0)-(y.t0||0))});
+ $("board").innerHTML=rows.map((r,k)=>{const t=r.t,h=t.hintsTotal||0;
+  return `<div class="row"><div class="rh"><b>${k+1}. ${TEAMS[r.c].name}</b><span>${t.done?"Finished in "+fmt((t.done-G.startAt)/1000):go?"Clue "+(t.i+1)+" of "+r.n:"Ready"}</span></div>
+  <div class="seg">${Array.from({length:r.n},(_,j)=>`<i style="${j<t.i?"background:"+COL[r.c]:""}"></i>`).join("")}</div>
+  <small>${go&&!t.done?"On this clue "+fmt((now-(t.t0||G.startAt))/1000)+" · ":""}${h} hint${h==1?"":"s"} used</small></div>`}).join("")}
+setInterval(board,1000);board();photos();
+</script></body></html>
