@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Host</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffd23f;--fg:#3b1d0a;--card:#fff8e7;--ac:#ff8a1f;--acfg:#2b1306;--mu:#6b3f12;--bd:#3b1d0a;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#2a1208;--fg:#fff1d6;--card:#43210f;--mu:#f0c48a;--bd:#ff9a2e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:700 16px/1.5 Nunito,system-ui,sans-serif;text-align:center}
+main{max-width:30rem;margin:0 auto;padding:1.25rem}
+h1{font:400 2.2rem/1.1 "Lilita One",Impact,sans-serif;margin:0 0 .5rem;text-shadow:3px 3px 0 var(--ac)}
+.card{background:var(--card);border:3px solid var(--bd);border-radius:18px;padding:1rem;margin:1rem 0;box-shadow:5px 5px 0 var(--bd);text-align:left}
+button{display:block;width:100%;font:400 1.3rem "Lilita One",Impact,sans-serif;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--ac);color:var(--acfg);box-shadow:0 5px 0 var(--bd);cursor:pointer;margin:.6rem 0}
+button:active{transform:translateY(4px);box-shadow:0 1px 0 var(--bd)}button:disabled{opacity:.45}
+input{width:100%;font:inherit;text-align:center;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--card);color:var(--fg)}
+</style></head><body><main id="app"></main>
+<script type="module">
+import {db,doc,collection,onSnapshot,setDoc,getDocs,deleteDoc,TEAMS,HOST_PIN} from "./config.js";
+const $=i=>document.getElementById(i),A=$("app");
+let ok=sessionStorage.getItem("hp")===HOST_PIN,G={},TS=[],arm=0,busy="";
+onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{};r()});
+onSnapshot(collection(db,"teams"),s=>{TS=s.docs.map(d=>({id:d.id,...d.data()}));r()});
+function r(){
+ if(!ok){A.innerHTML=`<h1>Host</h1><input id="p" inputmode="numeric" placeholder="PIN"><button id="b">Enter</button>`;
+  $("b").onclick=()=>{if($("p").value===HOST_PIN){ok=true;sessionStorage.setItem("hp",HOST_PIN);r()}else $("p").value=""};return}
+ const row=t=>{const n=TEAMS[t.id]?TEAMS[t.id].route.length:0;
+  return `<div>${t.name}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}</div>`};
+ A.innerHTML=`<h1>Host</h1><div class="card"><b>${G.started?"The hunt is running":"The hunt has not started"}</b></div>
+ <button id="st" ${G.started?"disabled":""}>Start the hunt</button>
+ <div class="card">${TS.length?TS.map(row).join(""):"No teams have joined yet."}</div>
+ <button id="rs">${busy||"Reset everything"}</button>`;
+ $("st").onclick=()=>setDoc(doc(db,"game","state"),{started:true,startAt:Date.now()+5000});
+ $("rs").onclick=async()=>{
+  if(Date.now()-arm>4000){arm=Date.now();busy="Tap again to erase everything";return r()}
+  arm=0;busy="Erasing…";r();
+  for(const c of ["teams","photos","chat"]){const s=await getDocs(collection(db,c));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)))}
+  await setDoc(doc(db,"game","state"),{started:false,startAt:0});busy="";r()}}
+r();
+</script></body></html>

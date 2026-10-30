@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thanksgiving Treasure Hunt</title>
+<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#ffd23f;--fg:#3b1d0a;--card:#fff8e7;--ac:#ff8a1f;--acfg:#2b1306;--mu:#6b3f12;--bd:#3b1d0a;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#2a1208;--fg:#fff1d6;--card:#43210f;--mu:#f0c48a;--bd:#ff9a2e}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg) radial-gradient(rgba(255,138,31,.25) 4px,transparent 4px) 0 0/30px 30px;color:var(--fg);font:700 16px/1.5 Nunito,system-ui,sans-serif;text-align:center}
+main{max-width:30rem;margin:0 auto;padding:1.25rem}
+h1,h2{font:400 2.2rem/1.1 "Lilita One",Impact,sans-serif;margin:0 0 .5rem;text-shadow:3px 3px 0 var(--ac)}h2{font-size:1.7rem}
+.card{background:var(--card);border:3px solid var(--bd);border-radius:18px;padding:1rem;margin:1rem 0;box-shadow:5px 5px 0 var(--bd)}
+.mu{color:var(--mu);font-size:.9rem}
+.btn,button{display:block;width:100%;font:400 1.3rem "Lilita One",Impact,sans-serif;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--ac);color:var(--acfg);box-shadow:0 5px 0 var(--bd);cursor:pointer;margin:.6rem 0}
+button:active{transform:translateY(4px);box-shadow:0 1px 0 var(--bd)}button:disabled{opacity:.45}
+button.g{background:none;border:0;box-shadow:none;color:var(--mu);font:700 .9rem Nunito,sans-serif;width:auto;display:inline-block}
+input[type=text]{width:100%;font:inherit;text-align:center;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--card);color:var(--fg)}
+.clue{font-weight:900;font-size:1.35rem}.clue img{max-width:100%;border-radius:8px}
+.tm{font:400 2.4rem "Lilita One",sans-serif;text-shadow:2px 2px 0 var(--ac)}
+.hint{background:var(--card);border:3px dashed var(--ac);border-radius:14px;padding:.5rem;margin:.6rem 0}
+.msg{background:var(--ac);color:var(--acfg);border:3px solid var(--bd);border-radius:14px;padding:.6rem;margin:1rem 0}
+.t svg{width:9rem;display:block;margin:0 auto}
+</style></head><body><main id="app"></main>
+<script type="module">
+import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,PLACES,TEAMS,HINT_WAIT} from "./config.js";
+const $=i=>document.getElementById(i),A=$("app");
+const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'><g stroke='#3b1d0a' stroke-width='4' stroke-linejoin='round'><ellipse cx='100' cy='60' rx='17' ry='48' fill='#e63946' transform='rotate(-72 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ff8a1f' transform='rotate(-36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ffd23f'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2a9d4b' transform='rotate(36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2f80ed' transform='rotate(72 100 120)'/><ellipse cx='100' cy='135' rx='50' ry='42' fill='#9c5a2b'/><ellipse cx='100' cy='142' rx='30' ry='26' fill='#d9a066' stroke='none'/><circle cx='100' cy='100' r='30' fill='#9c5a2b'/><circle cx='88' cy='96' r='8' fill='#fff'/><circle cx='112' cy='96' r='8' fill='#fff'/><circle cx='90' cy='97' r='3.5' stroke='none'/><circle cx='110' cy='97' r='3.5' stroke='none'/><path d='M92 106h16l-8 14z' fill='#ffb703'/><path d='M97 120q-3 14 3 16q6-2 3-16z' fill='#e63946'/><rect x='80' y='44' width='40' height='32' rx='4' fill='#2b2b2b'/><rect x='80' y='64' width='40' height='9' fill='#ffd23f'/><rect x='68' y='72' width='64' height='9' rx='4' fill='#2b2b2b'/></g></svg>`;
+let code=localStorage.getItem("team"),G={},T=null,sel=null,note="",pend=null,unT=null;
+const ref=()=>doc(db,"teams",code);
+const fresh=()=>({name:TEAMS[code].name,i:0,t0:0,h:0,th:0,hintsTotal:0,times:[],photoDone:false,done:0});
+function listen(){if(unT)unT();unT=onSnapshot(ref(),s=>{if(!s.exists()){setDoc(ref(),fresh());return}T=s.data();r()})}
+onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{};r()});
+if(code&&!TEAMS[code])code=null;if(code)listen();
+
+function login(c){c=c.trim().toLowerCase();if(!TEAMS[c]){note="Team code not found. Check it and try again.";return r()}
+ code=c;localStorage.setItem("team",c);note="";listen()}
+const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onerror=no;im.onload=()=>{const k=Math.min(1,1280/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);ok(c.toDataURL("image/jpeg",.8))};im.src=URL.createObjectURL(f)});
+async function snap(f,place){note="Sending photo…";r();
+ try{await addDoc(collection(db,"photos"),{team:code,name:TEAMS[code].name,place,ts:Date.now(),img:await shrink(f)});note="";r();return true}
+ catch(e){note="Photo did not send. Try again.";r();return false}}
+async function go(loc){
+ const rt=TEAMS[code].route;if(T.i>=rt.length)return;
+ if(loc===rt[T.i]){const now=Date.now(),i=T.i+1;note="";sel=loc;
+  await updateDoc(ref(),{i,t0:now,h:0,th:0,times:[...T.times,now-(T.t0||G.startAt)],...(i>=rt.length?{done:now}:{})})}
+ else if(PLACES[loc])note="That’s not the spot for your current clue. Keep looking!";
+ else note="Code not recognized. Check it and try again.";
+ r()}
+const sb=()=>sel?`<div class="card"><b>Found it! Snap a team selfie at the ${sel}.</b><label class="btn">Take selfie<input type="file" accept="image/*" id="sf" hidden></label><button class="g" id="sk">Skip</button></div>`:"";
+function bs(){if(!sel)return;
+ $("sf").onchange=async e=>{const f=e.target.files[0],p=sel;if(f){sel=null;if(!await snap(f,p)){sel=p;r()}}};
+ $("sk").onclick=()=>{sel=null;r()}}
+
+function r(){
+ const now=Date.now(),msg=note?`<div class="msg">${note}</div>`:"";
+ if(pend&&T&&G.started&&now>=G.startAt){const p=pend;pend=null;go(p)}
+ if(!code){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Thanksgiving Treasure Hunt</h1><p class="mu">Enter your team code.</p>${msg}<input type="text" id="c" autocapitalize="none" autocomplete="off" placeholder="Team code"><button id="go">Start hunting</button>`;
+  $("go").onclick=()=>login($("c").value);return}
+ if(!T){A.innerHTML="<p>Loading…</p>";return}
+ const tm=TEAMS[code],rt=tm.route;
+ if(!T.photoDone){A.innerHTML=`<div class="t">${TURKEY}</div><h2>${tm.name}, smile!</h2><p>Take your team photo together before the hunt starts.</p>${msg}<label class="btn">Take team photo<input type="file" accept="image/*" id="f" hidden></label>`;
+  $("f").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"team"))await updateDoc(ref(),{photoDone:true})};return}
+ if(!G.started||now<G.startAt){A.innerHTML=G.started?`<div class="t">${TURKEY}</div><h1>Get ready…</h1><div class="tm">${Math.ceil((G.startAt-now)/1000)}</div>`:`<div class="t">${TURKEY}</div><h2>You’re in, ${tm.name}!</h2><p>Waiting for the host to start the hunt.</p>`;return}
+ if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div>`;bs();return}
+ const P=PLACES[rt[T.i]];
+ A.innerHTML=`<h2>${tm.name}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" autocapitalize="none" autocomplete="off" placeholder="Place code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;
+ bs();
+ if($("hb"))$("hb").onclick=()=>updateDoc(ref(),{h:increment(1),th:Date.now(),hintsTotal:increment(1)});
+ $("tg").onclick=()=>{pend=$("tc").value.trim().toLowerCase();if(pend)r()};
+ $("sw").onclick=()=>{localStorage.removeItem("team");if(unT)unT();code=null;T=null;sel=null;note="";r()};
+ tick()}
+function tick(){const now=Date.now();
+ if(G.started&&now<G.startAt)return r();
+ if(!T||!$("tm"))return;
+ $("tm").textContent=fmt((now-(T.t0||G.startAt))/1000);
+ const b=$("hb");if(b){const w=T.h?HINT_WAIT-(now-T.th)/1000:0;b.disabled=w>0;b.textContent=w>0?"Next hint in "+fmt(w):"Need a hint?"}}
+setInterval(tick,1000);
+
+function hg(){const h=location.hash.slice(1).toLowerCase();if(h){history.replaceState(null,"",location.pathname+location.search);pend=h;r()}}
+addEventListener("hashchange",hg);hg();r();
+</script></body></html>
