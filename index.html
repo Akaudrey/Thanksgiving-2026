@@ -21,18 +21,40 @@ input[type=text]{width:100%;font:inherit;text-align:center;padding:.8rem;border:
 .hint{background:var(--card);border:3px dashed var(--ac);border-radius:14px;padding:.5rem;margin:.6rem 0}
 .msg{background:var(--ac);color:var(--acfg);border:3px solid var(--bd);border-radius:14px;padding:.6rem;margin:1rem 0}
 .t svg{width:9rem;display:block;margin:0 auto}
+.cl{height:38vh;overflow-y:auto;padding:.6rem}
+.bub{background:var(--card);border:3px solid var(--bd);border-radius:14px;padding:.3rem .7rem;margin:.4rem 2rem .4rem 0;text-align:left}
+.bub.me{background:var(--ac);color:var(--acfg);margin:.4rem 0 .4rem 2rem}
+.sys{color:var(--mu);font-size:.85rem;margin:.3rem 0}
+button.tz{display:inline-block;width:auto;font:800 .95rem Nunito,sans-serif;padding:.4rem .8rem;margin:.25rem;border-radius:99px;background:var(--card);color:var(--fg);box-shadow:none}
 </style></head><body><main id="app"></main>
 <script type="module">
-import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,PLACES,TEAMS,HINT_WAIT} from "./config.js";
+import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,query,orderBy,limit,PLACES,TEAMS,HINT_WAIT} from "./config.js";
 const $=i=>document.getElementById(i),A=$("app");
 const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
 const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'><g stroke='#3b1d0a' stroke-width='4' stroke-linejoin='round'><ellipse cx='100' cy='60' rx='17' ry='48' fill='#e63946' transform='rotate(-72 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ff8a1f' transform='rotate(-36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ffd23f'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2a9d4b' transform='rotate(36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2f80ed' transform='rotate(72 100 120)'/><ellipse cx='100' cy='135' rx='50' ry='42' fill='#9c5a2b'/><ellipse cx='100' cy='142' rx='30' ry='26' fill='#d9a066' stroke='none'/><circle cx='100' cy='100' r='30' fill='#9c5a2b'/><circle cx='88' cy='96' r='8' fill='#fff'/><circle cx='112' cy='96' r='8' fill='#fff'/><circle cx='90' cy='97' r='3.5' stroke='none'/><circle cx='110' cy='97' r='3.5' stroke='none'/><path d='M92 106h16l-8 14z' fill='#ffb703'/><path d='M97 120q-3 14 3 16q6-2 3-16z' fill='#e63946'/><rect x='80' y='44' width='40' height='32' rx='4' fill='#2b2b2b'/><rect x='80' y='64' width='40' height='9' fill='#ffd23f'/><rect x='68' y='72' width='64' height='9' rx='4' fill='#2b2b2b'/></g></svg>`;
-let code=localStorage.getItem("team"),G={},T=null,sel=null,note="",pend=null,unT=null;
+let code=localStorage.getItem("team"),G={},T=null,sel=null,note="",pend=null,unT=null,view="",built=false,CH=[];
 const ref=()=>doc(db,"teams",code);
 const fresh=()=>({name:TEAMS[code].name,i:0,t0:0,h:0,th:0,hintsTotal:0,times:[],photoDone:false,done:0});
 function listen(){if(unT)unT();unT=onSnapshot(ref(),s=>{if(!s.exists()){setDoc(ref(),fresh());return}T=s.data();r()})}
 onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{};r()});
 if(code&&!TEAMS[code])code=null;if(code)listen();
+
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const TAUNTS=["Better hurry up!","We’re coming for you!","Is that all you’ve got?","Gobble gobble!","Too easy!","Nice try, everybody"];
+const sys=t=>addDoc(collection(db,"chat"),{sys:true,name:"",text:t,ts:Date.now()}).catch(()=>{});
+onSnapshot(query(collection(db,"chat"),orderBy("ts","desc"),limit(30)),s=>{CH=s.docs.map(d=>d.data()).reverse();if(view==="chat"&&built)paint()});
+function paint(){const L=$("cl");if(!L)return;
+ L.innerHTML=CH.map(m=>m.sys?`<div class="sys">🦃 ${esc(m.text)}</div>`:`<div class="bub${m.team===code?" me":""}"><b>${esc(m.name)}</b><br>${esc(m.text)}</div>`).join("")||`<p class="mu">No messages yet. Say something!</p>`;
+ L.scrollTop=L.scrollHeight}
+function buildChat(){built=true;
+ A.innerHTML=`<h2>Trash talk</h2><div id="cl" class="card cl"></div><div id="cm" class="mu"></div><div>${TAUNTS.map((t,i)=>`<button class="tz" data-i="${i}">${t}</button>`).join("")}</div><input type="text" id="ci" maxlength="140" autocomplete="off" placeholder="Type your own taunt"><button id="cs">Send</button><button class="g" id="cb">Back to the hunt</button>`;
+ paint();
+ const send=t=>{t=t.trim();if(!t)return;if(G.mute){$("cm").textContent="The host has muted the chat.";return}
+  $("cm").textContent="";addDoc(collection(db,"chat"),{team:code,name:TEAMS[code].name,text:t.slice(0,140),ts:Date.now()}).catch(()=>{$("cm").textContent="Message did not send."})};
+ A.querySelectorAll(".tz").forEach(b=>b.onclick=()=>send(TAUNTS[b.dataset.i]));
+ const go2=()=>{send($("ci").value);$("ci").value=""};
+ $("cs").onclick=go2;$("ci").onkeydown=e=>{if(e.key==="Enter")go2()};
+ $("cb").onclick=()=>{view="";built=false;r()}}
 
 function login(c){c=c.trim().toLowerCase();if(!TEAMS[c]){note="Team code not found. Check it and try again.";return r()}
  code=c;localStorage.setItem("team",c);note="";listen()}
@@ -42,7 +64,7 @@ async function snap(f,place){note="Sending photo…";r();
  catch(e){note="Photo did not send. Try again.";r();return false}}
 async function go(loc){
  const rt=TEAMS[code].route;if(T.i>=rt.length)return;
- if(loc===rt[T.i]){const now=Date.now(),i=T.i+1;note="";sel=loc;
+ if(loc===rt[T.i]){const now=Date.now(),i=T.i+1;note="";sel=loc;sys(i>=rt.length?TEAMS[code].name+" finished the hunt!":TEAMS[code].name+" just found clue "+i+"!");
   await updateDoc(ref(),{i,t0:now,h:0,th:0,times:[...T.times,now-(T.t0||G.startAt)],...(i>=rt.length?{done:now}:{})})}
  else if(PLACES[loc])note="That’s not the spot for your current clue. Keep looking!";
  else note="Code not recognized. Check it and try again.";
@@ -55,6 +77,7 @@ function bs(){if(!sel)return;
 function r(){
  const now=Date.now(),msg=note?`<div class="msg">${note}</div>`:"";
  if(pend&&T&&G.started&&now>=G.startAt){const p=pend;pend=null;go(p)}
+ if(view==="chat"&&code&&T){if(!built)buildChat();return}
  if(!code){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Thanksgiving Treasure Hunt</h1><p class="mu">Enter your team code.</p>${msg}<input type="text" id="c" autocapitalize="none" autocomplete="off" placeholder="Team code"><button id="go">Start hunting</button>`;
   $("go").onclick=()=>login($("c").value);return}
  if(!T){A.innerHTML="<p>Loading…</p>";return}
@@ -62,13 +85,13 @@ function r(){
  if(!T.photoDone){A.innerHTML=`<div class="t">${TURKEY}</div><h2>${tm.name}, smile!</h2><p>Take your team photo together before the hunt starts.</p>${msg}<label class="btn">Take team photo<input type="file" accept="image/*" capture="user" id="f" hidden></label>`;
   $("f").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"team"))await updateDoc(ref(),{photoDone:true})};return}
  if(!G.started||now<G.startAt){A.innerHTML=G.started?`<div class="t">${TURKEY}</div><h1>Get ready…</h1><div class="tm">${Math.ceil((G.startAt-now)/1000)}</div>`:`<div class="t">${TURKEY}</div><h2>You’re in, ${tm.name}!</h2><p>Waiting for the host to start the hunt.</p>`;return}
- if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div>`;bs();return}
+ if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div><button id="ch">Trash talk</button>`;bs();$("ch").onclick=()=>{view="chat";built=false;r()};return}
  const P=PLACES[rt[T.i]];
- A.innerHTML=`<h2>${tm.name}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" autocapitalize="none" autocomplete="off" placeholder="Place code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;
+ A.innerHTML=`<h2>${tm.name}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<button id="ch">Trash talk</button><p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" autocapitalize="none" autocomplete="off" placeholder="Place code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;
  bs();
  if($("hb"))$("hb").onclick=()=>updateDoc(ref(),{h:increment(1),th:Date.now(),hintsTotal:increment(1)});
  $("tg").onclick=()=>{pend=$("tc").value.trim().toLowerCase();if(pend)r()};
- $("sw").onclick=()=>{localStorage.removeItem("team");if(unT)unT();code=null;T=null;sel=null;note="";r()};
+ $("ch").onclick=()=>{view="chat";built=false;r()};$("sw").onclick=()=>{localStorage.removeItem("team");if(unT)unT();code=null;T=null;sel=null;note="";r()};
  tick()}
 let cd=false;
 function tick(){const now=Date.now();
