@@ -2,19 +2,32 @@
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Host</title>
-<link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#ffd23f;--fg:#3b1d0a;--card:#fff8e7;--ac:#ff8a1f;--acfg:#2b1306;--mu:#6b3f12;--bd:#3b1d0a;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
-@media(prefers-color-scheme:dark){:root{--bg:#2a1208;--fg:#fff1d6;--card:#43210f;--mu:#f0c48a;--bd:#ff9a2e}}
+:root{--bg:#f4f1ec;--fg:#1f2430;--card:#fff;--ac:#b4561b;--acfg:#fff;--mu:#697082;--bd:#dcd6cb;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e8ebf0;--card:#1b212b;--ac:#e08a3c;--acfg:#1a1206;--mu:#8f98a8;--bd:#2c3441}}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--fg);font:700 16px/1.5 Nunito,system-ui,sans-serif;text-align:center}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.5 Inter,system-ui,sans-serif;text-align:center}
 main{max-width:30rem;margin:0 auto;padding:1.25rem}
-h1{font:400 2.2rem/1.1 "Lilita One",Impact,sans-serif;margin:0 0 .5rem;text-shadow:3px 3px 0 var(--ac)}
-.card{background:var(--card);border:3px solid var(--bd);border-radius:18px;padding:1rem;margin:1rem 0;box-shadow:5px 5px 0 var(--bd);text-align:left}
-button{display:block;width:100%;font:400 1.3rem "Lilita One",Impact,sans-serif;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--ac);color:var(--acfg);box-shadow:0 5px 0 var(--bd);cursor:pointer;margin:.6rem 0}
-button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;margin:0 0 0 .4rem;box-shadow:none}
-button:active{transform:translateY(4px);box-shadow:0 1px 0 var(--bd)}button:disabled{opacity:.45}
-input{width:100%;font:inherit;text-align:center;padding:.8rem;border:3px solid var(--bd);border-radius:14px;background:var(--card);color:var(--fg)}
+h1,h2{font:600 2rem/1.15 "Playfair Display",Georgia,serif;margin:0 0 .5rem}h2{font-size:1.5rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:1rem;margin:1rem 0}
+.mu{color:var(--mu);font-size:.9rem}
+.btn,button{display:block;width:100%;font:600 1rem Inter,sans-serif;padding:.85rem;border:0;border-radius:10px;background:var(--ac);color:var(--acfg);cursor:pointer;margin:.6rem 0}
+button:active{opacity:.85}button:disabled{opacity:.4}
+button.g{background:none;color:var(--mu);font-weight:400;font-size:.9rem;width:auto;display:inline-block}
+input[type=text],input:not([type]){width:100%;font:inherit;text-align:center;padding:.8rem;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg)}
+.clue{font:500 1.3rem/1.4 "Playfair Display",Georgia,serif}.clue img{max-width:100%;border-radius:8px}
+.tm{font:600 2.2rem Inter,sans-serif;font-variant-numeric:tabular-nums}
+.hint{background:var(--card);border-left:3px solid var(--ac);border-radius:6px;padding:.5rem .8rem;margin:.6rem 0;text-align:left}
+.msg{background:var(--card);border:1px solid var(--ac);border-radius:10px;padding:.6rem;margin:1rem 0}
+.t svg{width:7rem;display:block;margin:0 auto .5rem}
+.cl{height:38vh;overflow-y:auto;padding:.6rem}
+.bub{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:.3rem .7rem;margin:.4rem 2rem .4rem 0;text-align:left}
+.bub.me{background:var(--ac);color:var(--acfg);border-color:var(--ac);margin:.4rem 0 .4rem 2rem}
+.sys{color:var(--mu);font-size:.85rem;margin:.3rem 0}
+button.tz{display:inline-block;width:auto;font:500 .9rem Inter,sans-serif;padding:.4rem .8rem;margin:.25rem;border-radius:99px;background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;margin:0 0 0 .4rem}
+.hostcard{text-align:left}
 </style></head><body><main id="app"></main>
 <script type="module">
 import {db,doc,collection,onSnapshot,setDoc,getDocs,deleteDoc,query,orderBy,limit,TEAMS,HOST_PIN} from "./config.js";
@@ -29,11 +42,11 @@ function r(){
   $("b").onclick=()=>{if($("p").value===HOST_PIN){ok=true;sessionStorage.setItem("hp",HOST_PIN);r()}else $("p").value=""};return}
  const row=t=>{const n=TEAMS[t.id]?TEAMS[t.id].route.length:0;
   return `<div>${t.name}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}</div>`};
- A.innerHTML=`<h1>Host</h1><div class="card"><b>${G.started?"The hunt is running":"The hunt has not started"}</b></div>
+ A.innerHTML=`<h1>Host</h1><div class="card hostcard"><b>${G.started?"The hunt is running":"The hunt has not started"}</b></div>
  <button id="st" ${G.started?"disabled":""}>Start the hunt</button>
- <div class="card">${TS.length?TS.map(row).join(""):"No teams have joined yet."}</div>
+ <div class="card hostcard">${TS.length?TS.map(row).join(""):"No teams have joined yet."}</div>
  <button id="mu">${G.mute?"Chat is muted (tap to unmute)":"Mute chat"}</button>
- <div class="card">${CH.length?CH.map(m=>`<div>${m.sys?"":"<b>"+esc(m.name)+":</b> "}${esc(m.text)} <button class="x" data-id="${m.id}">Delete</button></div>`).join(""):"No chat messages."}</div>
+ <div class="card hostcard">${CH.length?CH.map(m=>`<div>${m.sys?"":"<b>"+esc(m.name)+":</b> "}${esc(m.text)} <button class="x" data-id="${m.id}">Delete</button></div>`).join(""):"No chat messages."}</div>
  <button id="rs">${busy||"Reset everything"}</button>`;
  $("mu").onclick=()=>setDoc(doc(db,"game","state"),{mute:!G.mute},{merge:true});
  A.querySelectorAll(".x").forEach(b=>b.onclick=()=>deleteDoc(doc(db,"chat",b.dataset.id)));
