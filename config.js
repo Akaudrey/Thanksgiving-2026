@@ -28,14 +28,13 @@ export const PLACES={
  oliveoil:{img:"clues/oliveoil.jpg",clue:"",hints:["Look closely at the picture.","Think about cooking.","The answer is the olive oil."]},
  gate:{audio:"clues/gate.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about trains.","The answer is the crossing gate."]}
 };
-// Team login code -> name and the order of places (the last one is where that team finishes).
+// Team login code -> default name (teams pick their own) and the order of places (the last one is where that team finishes).
 // Each team is offset around the same circle, so no two teams are ever at the same place at the same step.
 const ALL=["clock","deck","spout","billiards","woodshed","fridge","oliveoil","gate"];
 const spin=n=>ALL.slice(n).concat(ALL.slice(0,n));
 export const TEAMS={
- owl:{name:"Owls",route:spin(0)},
- fox:{name:"Foxes",route:spin(2)},
- bear:{name:"Bears",route:spin(3)},
- wolf:{name:"Wolves",route:spin(5)},
- hawk:{name:"Hawks",route:spin(6)}
+ team1:{name:"Team #1",route:spin(0)},
+ team2:{name:"Team #2",route:spin(2)},
+ team3:{name:"Team #3",route:spin(4)},
+ team4:{name:"Team #4",route:spin(6)}
 };

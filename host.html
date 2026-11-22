@@ -41,13 +41,15 @@ function r(){
  if(!ok){if($("p"))return;A.innerHTML=`<h1>Host</h1><input id="p" inputmode="numeric" placeholder="PIN"><button id="b">Enter</button>`;
   $("b").onclick=()=>{if($("p").value===HOST_PIN){ok=true;sessionStorage.setItem("hp",HOST_PIN);r()}else $("p").value=""};return}
  const row=t=>{const n=TEAMS[t.id]?TEAMS[t.id].route.length:0;
-  return `<div>${t.name}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}</div>`};
+  return `<div>${esc(t.name)}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}</div>`};
  A.innerHTML=`<h1>Host</h1><div class="card hostcard"><b>${G.started?"The hunt is running":"The hunt has not started"}</b></div>
+ <button id="tv">${G.tvMode==="board"?"Back to welcome screen":"Show scoreboard on TV"}</button>
  <button id="st" ${G.started?"disabled":""}>Start the hunt</button>
  <div class="card hostcard">${TS.length?TS.map(row).join(""):"No teams have joined yet."}</div>
  <button id="mu">${G.mute?"Chat is muted (tap to unmute)":"Mute chat"}</button>
  <div class="card hostcard">${CH.length?CH.map(m=>`<div>${m.sys?"":"<b>"+esc(m.name)+":</b> "}${esc(m.text)} <button class="x" data-id="${m.id}">Delete</button></div>`).join(""):"No chat messages."}</div>
  <button id="rs">${busy||"Reset everything"}</button>`;
+ $("tv").onclick=()=>setDoc(doc(db,"game","state"),{tvMode:G.tvMode==="board"?"welcome":"board"},{merge:true});
  $("mu").onclick=()=>setDoc(doc(db,"game","state"),{mute:!G.mute},{merge:true});
  A.querySelectorAll(".x").forEach(b=>b.onclick=()=>deleteDoc(doc(db,"chat",b.dataset.id)));
  $("st").onclick=()=>setDoc(doc(db,"game","state"),{started:true,startAt:Date.now()+5000},{merge:true});
@@ -55,6 +57,6 @@ function r(){
   if(Date.now()-arm>4000){arm=Date.now();busy="Tap again to erase everything";return r()}
   arm=0;busy="Erasing…";r();
   for(const c of ["teams","photos","latest","chat"]){const s=await getDocs(collection(db,c));await Promise.all(s.docs.map(d=>deleteDoc(d.ref)))}
-  await setDoc(doc(db,"game","state"),{started:false,startAt:0},{merge:true});busy="";r()}}
+  await setDoc(doc(db,"game","state"),{started:false,startAt:0,tvMode:"welcome"},{merge:true});busy="";r()}}
 r();
 </script></body></html>

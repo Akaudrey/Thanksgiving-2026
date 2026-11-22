@@ -34,11 +34,22 @@ small{color:var(--mu);font-size:.9rem}
 .cm{font-size:1.2rem;padding:.45rem .8rem;background:rgba(255,255,255,.05);border-radius:.6rem}
 .cm.new{border-left:.25rem solid var(--ac);background:rgba(255,255,255,.09)}
 .sy{color:var(--mu);font-style:italic}
-#tiles{grid-column:2/4;grid-row:3;display:grid;grid-template-columns:repeat(5,1fr);gap:1rem}
+#tiles{grid-column:2/4;grid-row:3;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:1rem}
 .tile{border:2px solid;border-radius:.8rem;overflow:hidden;position:relative;background:var(--card)}
 .tile span{position:absolute;left:.5rem;bottom:.5rem;padding:.1rem .6rem;border-radius:.4rem;color:#fff;font:600 .95rem Inter,sans-serif}
 #ban{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(10,12,16,.85);color:#fff;font:600 4.5rem/1.15 "Playfair Display",Georgia,serif;text-align:center;padding:2rem;z-index:5}
-</style></head><body>
+#wel{display:none;height:100vh;flex-direction:column;align-items:center;justify-content:center;gap:2rem;padding:2rem;text-align:center}
+body.wel #wel{display:flex}body.wel #app{display:none}
+.wh{display:flex;align-items:center;gap:1.5rem}.wh svg{height:7rem;width:auto;display:block}
+#wel h1{font-size:4.2rem}
+.ws{font-size:1.8rem;color:var(--mu);margin:0}
+.wg{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;width:100%;max-width:90rem}
+.wc{background:var(--card);border:.2rem solid;border-radius:1.2rem;padding:1.5rem;display:flex;flex-direction:column;align-items:center;gap:.8rem}
+.q{background:#fff;padding:.8rem;border-radius:.8rem;width:100%;max-width:17rem;aspect-ratio:1}
+.q img,.q canvas{width:100%!important;height:100%!important;display:block}
+.wn{font:600 2.2rem "Playfair Display",Georgia,serif}
+.wst{color:var(--mu);font-size:1.3rem}
+</style></head><body class="wel">
 <div id="app">
  <header><div class="hd"><span id="logo"></span><h1>Thanksgiving Treasure Hunt</h1></div><div id="st"></div></header>
  <div class="box" id="feat"></div>
@@ -46,40 +57,57 @@ small{color:var(--mu);font-size:.9rem}
  <div class="box" id="chat"></div>
  <div id="tiles"></div>
 </div>
+<div id="wel"><div class="wh"><span id="logo2"></span><h1>Thanksgiving Treasure Hunt</h1></div><p class="ws">Scan your team’s code to join, then pick a team name together.</p><div class="wg" id="wg"></div></div>
 <div id="ban"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import {db,doc,collection,onSnapshot,query,orderBy,limit,TEAMS} from "./config.js";
 const $=i=>document.getElementById(i);
-const COL={owl:"#8f89e0",fox:"#e0714a",bear:"#c9953a",wolf:"#3fb08a",hawk:"#4a95e0"};
+const COL={team1:"#8f89e0",team2:"#e0714a",team3:"#c9953a",team4:"#3fb08a"};
 const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
-let G={},TS={},LT={},featTs=0,first=true,ann=new Set(),bt=0,CH=[],lastC="";
+let G={},TS={},LT={},featTs=0,first=true,ann=new Set(),bt=0,CH=[],lastC="",featTeam="";
 
 const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'><g stroke='#3b1d0a' stroke-width='4' stroke-linejoin='round'><ellipse cx='100' cy='60' rx='17' ry='48' fill='#e63946' transform='rotate(-72 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ff8a1f' transform='rotate(-36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ffd23f'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2a9d4b' transform='rotate(36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2f80ed' transform='rotate(72 100 120)'/><ellipse cx='100' cy='135' rx='50' ry='42' fill='#9c5a2b'/><ellipse cx='100' cy='142' rx='30' ry='26' fill='#d9a066' stroke='none'/><circle cx='100' cy='100' r='30' fill='#9c5a2b'/><circle cx='88' cy='96' r='8' fill='#fff'/><circle cx='112' cy='96' r='8' fill='#fff'/><circle cx='90' cy='97' r='3.5' stroke='none'/><circle cx='110' cy='97' r='3.5' stroke='none'/><path d='M92 106h16l-8 14z' fill='#ffb703'/><path d='M97 120q-3 14 3 16q6-2 3-16z' fill='#e63946'/><rect x='80' y='44' width='40' height='32' rx='4' fill='#2b2b2b'/><rect x='80' y='64' width='40' height='9' fill='#ffd23f'/><rect x='68' y='72' width='64' height='9' rx='4' fill='#2b2b2b'/></g></svg>`;$("logo").innerHTML=TURKEY;
-onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{}});
+onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{};mode()});
 onSnapshot(collection(db,"teams"),s=>{
  TS={};s.docs.forEach(d=>TS[d.id]=d.data());
  s.docs.forEach(d=>{const t=d.data();
   if(t.done&&!ann.has(d.id)){ann.add(d.id);if(!first)banner(t.name+" finished in "+fmt((t.done-G.startAt)/1000)+"!")}
   if(!t.done)ann.delete(d.id)});
- first=false});
+ first=false;names()});
 onSnapshot(collection(db,"latest"),s=>{LT={};s.docs.forEach(d=>LT[d.id]=d.data());photos()});
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 onSnapshot(query(collection(db,"chat"),orderBy("ts","desc"),limit(30)),s=>{CH=s.docs.map(d=>({id:d.id,...d.data()})).reverse();chat()});
 function chat(){const m=CH.slice(-8),el=$("chat");
  const nw=m.length&&m[m.length-1].id!==lastC;if(m.length)lastC=m[m.length-1].id;
- el.innerHTML=`<div class="lab">Trash talk</div><div class="ms">${m.length?m.map((x,i)=>`<div class="cm${i==m.length-1?" new"+(nw?" pop":""):""}">${x.sys?`<span class="sy">${esc(x.text)}</span>`:`<b style="color:${COL[x.team]||"#aaa"}">${esc(x.name)}</b> ${esc(x.text)}`}</div>`).join(""):`<div class="cm">Messages from the teams will show up here.</div>`}</div>`}
+ el.innerHTML=`<div class="lab">Trash talk</div><div class="ms">${m.length?m.map((x,i)=>`<div class="cm${i==m.length-1?" new"+(nw?" pop":""):""}">${x.sys?`<span class="sy">${esc(x.text)}</span>`:`<b style="color:${COL[x.team]||"#aaa"}">${esc(nameOf(x.team)||x.name)}</b> ${esc(x.text)}`}</div>`).join(""):`<div class="cm">Messages from the teams will show up here.</div>`}</div>`}
+
+const base=new URL("./",location.href).href;
+const nameOf=c=>(TS[c]&&TS[c].name)||(TEAMS[c]&&TEAMS[c].name)||"";
+function buildWelcome(){
+ $("wg").innerHTML=Object.keys(TEAMS).map(c=>`<div class="wc" style="border-color:${COL[c]}"><div class="q" id="q-${c}"></div><div class="wn" id="wn-${c}"></div><div class="wst" id="ws-${c}"></div></div>`).join("");
+ if(window.QRCode)Object.keys(TEAMS).forEach(c=>new QRCode($("q-"+c),{text:base+"?team="+c,width:256,height:256,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}));
+ names()}
+function names(){
+ Object.keys(TEAMS).forEach(c=>{const t=TS[c],n=nameOf(c);
+  const a=$("wn-"+c);if(a)a.textContent=n;
+  const b=$("ws-"+c);if(b)b.textContent=t&&t.photoDone?"Ready!":t&&t.named?"Joined. Waiting for the team photo.":"Scan to join";
+  const l=$("tl-"+c);if(l)l.textContent=n});
+ const cp=document.querySelector("#feat .cap");if(cp&&featTeam)cp.textContent=nameOf(featTeam)}
+function mode(){document.body.className=(G.tvMode==="board")?"":"wel"}
+$("logo2").innerHTML=TURKEY;buildWelcome();mode();
 
 function banner(t){const b=$("ban");b.textContent=t;b.style.display="flex";clearTimeout(bt);bt=setTimeout(()=>b.style.display="none",9000)}
 
 function photos(){
  const f=Object.values(LT).sort((a,b)=>b.ts-a.ts)[0],F=$("feat");
  if(!f)F.innerHTML=`<div class="empty">${TURKEY}<p>Waiting for photos…</p></div>`;
- else{const nw=f.ts!==featTs;featTs=f.ts;
-  F.innerHTML=`<div class="bg" style="background-image:url('${f.img}')"></div><img src="${f.img}" alt=""><div class="cap">${f.name}</div>`;
+ else{const nw=f.ts!==featTs;featTs=f.ts;featTeam=f.team;
+  F.innerHTML=`<div class="bg" style="background-image:url('${f.img}')"></div><img src="${f.img}" alt=""><div class="cap">${esc(nameOf(f.team)||f.name)}</div>`;
   if(nw){F.classList.remove("pop");void F.offsetWidth;F.classList.add("pop")}}
  $("tiles").innerHTML=Object.keys(TEAMS).map(c=>{const l=LT[c];
-  return `<div class="tile" style="border-color:${COL[c]}">${l?`<div class="bg" style="background-image:url('${l.img}')"></div><img src="${l.img}" alt="">`:""}<span style="background:${COL[c]}">${TEAMS[c].name}</span></div>`}).join("")}
+  return `<div class="tile" style="border-color:${COL[c]}">${l?`<div class="bg" style="background-image:url('${l.img}')"></div><img src="${l.img}" alt="">`:""}<span id="tl-${c}" style="background:${COL[c]}">${esc(nameOf(c))}</span></div>`}).join("")}
 
 function board(){
  const now=Date.now(),go=G.started&&G.startAt<=now;
@@ -87,7 +115,7 @@ function board(){
  const rows=Object.keys(TEAMS).map(c=>({c,n:TEAMS[c].route.length,t:TS[c]||{i:0,hintsTotal:0,t0:0,done:0}}));
  rows.sort((a,b)=>{const x=a.t,y=b.t;if(!!x.done!==!!y.done)return x.done?-1:1;if(x.done)return x.done-y.done;return(y.i-x.i)||((x.t0||0)-(y.t0||0))});
  $("board").innerHTML='<div class="lab">Leaderboard</div>'+rows.map((r,k)=>{const t=r.t,h=t.hintsTotal||0;
-  return `<div class="row"><div class="rh"><b>${k+1}. ${TEAMS[r.c].name}</b><span>${t.done?"Finished in "+fmt((t.done-G.startAt)/1000):go?"Clue "+(t.i+1)+" of "+r.n:"Ready"}</span></div>
+  return `<div class="row"><div class="rh"><b>${k+1}. ${esc(nameOf(r.c))}</b><span>${t.done?"Finished in "+fmt((t.done-G.startAt)/1000):go?"Clue "+(t.i+1)+" of "+r.n:"Ready"}</span></div>
   <div class="seg">${Array.from({length:r.n},(_,j)=>`<i style="${j<t.i?"background:"+COL[r.c]:""}"></i>`).join("")}</div>
   <small>${go&&!t.done?"On this clue "+fmt((now-(t.t0||G.startAt))/1000)+" · ":""}${h} hint${h==1?"":"s"} used</small></div>`}).join("")}
 setInterval(board,1000);board();photos();
