@@ -37,7 +37,7 @@ const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'>
 let code=localStorage.getItem("team"),G={},T=null,sel=null,note="",pend=null,unT=null,view="",built=false,CH=[];
 const ref=()=>doc(db,"teams",code);
 const nameNow=()=>(T&&T.name)||TEAMS[code].name;
-const fresh=()=>({name:TEAMS[code].name,named:false,i:0,t0:0,h:0,th:0,hintsTotal:0,times:[],photoDone:false,done:0});
+const fresh=()=>({name:TEAMS[code].name,named:false,needSelfie:false,i:0,t0:0,h:0,th:0,hintsTotal:0,times:[],photoDone:false,done:0});
 function listen(){if(unT)unT();unT=onSnapshot(ref(),s=>{if(!s.exists()){setDoc(ref(),fresh());return}T=s.data();r()})}
 onSnapshot(doc(db,"game","state"),s=>{G=s.data()||{};r()});
 {const q=(new URLSearchParams(location.search).get("team")||"").toLowerCase();if(TEAMS[q]){code=q;localStorage.setItem("team",q);history.replaceState(null,"",location.pathname+location.hash)}}
@@ -70,8 +70,8 @@ async function go(loc){
  const rt=TEAMS[code].route;if(T.i>=rt.length)return;
  if(loc===rt[T.i]){const now=Date.now(),at=T.i;
   const won=await runTransaction(db,async tx=>{const d=(await tx.get(ref())).data();if(d.i!==at)return false;const i=at+1;
-   tx.update(ref(),{i,t0:now,h:0,th:0,times:[...d.times,now-(d.t0||G.startAt)],...(i>=rt.length?{done:now}:{})});return true});
-  if(won){note="";sel=loc;const i=at+1;sys(i>=rt.length?nameNow()+" finished the hunt!":nameNow()+" just found clue "+i+"!")}
+   tx.update(ref(),{i,t0:now,h:0,th:0,needSelfie:true,times:[...d.times,now-(d.t0||G.startAt)],...(i>=rt.length?{done:now}:{})});return true});
+  if(won){note="";const i=at+1;sys(i>=rt.length?nameNow()+" finished the hunt!":nameNow()+" just found clue "+i+"!")}
   else note="Your team already found this one. Check your current clue."}
  else if(rt.slice(0,T.i).includes(loc))note="Your team already found this one. Check your current clue."
  else if(PLACES[loc])note="That’s not the spot for your current clue. Keep looking!";
@@ -95,6 +95,9 @@ function r(){
  if(!T.photoDone){A.innerHTML=`<div class="t">${TURKEY}</div><h2>${nm}, smile!</h2><p>Take your team photo together before the hunt starts.</p>${msg}<label class="btn">Take team photo<input type="file" accept="image/*" capture="user" id="f" hidden></label>`;
   $("f").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"team"))await updateDoc(ref(),{photoDone:true})};return}
  if(!G.started||now<G.startAt){A.innerHTML=G.started?`<div class="t">${TURKEY}</div><h1>Get ready…</h1><div class="tm">${Math.ceil((G.startAt-now)/1000)}</div>`:`<div class="t">${TURKEY}</div><h2>You’re in, ${nm}!</h2><p>Waiting for the host to start the hunt.</p>`;return}
+ if(T.needSelfie){const last=T.i>=rt.length;
+  A.innerHTML=`<div class="t">${TURKEY}</div><h2>${last?"That’s the last one!":"Found it!"}</h2><p>${last?"Take a team victory selfie to finish.":"Before your next clue, take a team selfie."}</p><p class="mu">Get creative. The scoreboard is on in the house, so try not to show where you are.</p>${msg}<label class="btn">Take team selfie<input type="file" accept="image/*" capture="user" id="sf2" hidden></label>`;
+  $("sf2").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"stop"))await updateDoc(ref(),{needSelfie:false,t0:Date.now()})};return}
  if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div><button id="ch">Trash talk</button>`;bs();$("ch").onclick=()=>{view="chat";built=false;r()};return}
  const P=PLACES[rt[T.i]];
  A.innerHTML=`<h2>${nm}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}${P.audio?`<audio controls preload="auto" src="${P.audio}"></audio>`:""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<button id="ch">Trash talk</button><p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" autocapitalize="none" autocomplete="off" placeholder="Place code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;

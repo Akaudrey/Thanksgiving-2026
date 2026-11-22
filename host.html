@@ -41,7 +41,7 @@ function r(){
  if(!ok){if($("p"))return;A.innerHTML=`<h1>Host</h1><input id="p" inputmode="numeric" placeholder="PIN"><button id="b">Enter</button>`;
   $("b").onclick=()=>{if($("p").value===HOST_PIN){ok=true;sessionStorage.setItem("hp",HOST_PIN);r()}else $("p").value=""};return}
  const row=t=>{const n=TEAMS[t.id]?TEAMS[t.id].route.length:0;
-  return `<div>${esc(t.name)}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}</div>`};
+  return `<div>${esc(t.name)}: ${t.photoDone?"photo done":"no photo yet"}, ${t.i>=n?"finished":"clue "+(t.i+1)+" of "+n}, hints used ${t.hintsTotal}${t.needSelfie?", selfie pending":""}</div>`};
  A.innerHTML=`<h1>Host</h1><div class="card hostcard"><b>${G.started?"The hunt is running":"The hunt has not started"}</b></div>
  <button id="tv">${G.tvMode==="board"?"Back to welcome screen":"Show scoreboard on TV"}</button>
  <button id="st" ${G.started?"disabled":""}>Start the hunt</button>
