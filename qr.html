@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Print sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font:400 16px/1.5 Inter,system-ui,sans-serif;color:#1f2430;background:#fff}
+main{max-width:52rem;margin:0 auto;padding:1.5rem}
+h1,h2{font-family:"Playfair Display",Georgia,serif;font-weight:600;margin:1.2rem 0 .4rem}
+.g{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.c{border:1px dashed #999;padding:.9rem;text-align:center;break-inside:avoid}
+.c>div{display:flex;justify-content:center;margin-bottom:.5rem}
+.c b{display:block;font-size:1.1rem}.c small{color:#555}
+input{font:inherit;padding:.6rem;border:1px solid #bbb;border-radius:8px}
+button{font:600 1rem Inter,sans-serif;padding:.6rem 1rem;border:0;border-radius:8px;background:#b4561b;color:#fff;cursor:pointer}
+@media print{.noprint{display:none}}
+@media(max-width:600px){.g{grid-template-columns:repeat(2,1fr)}}
+</style></head><body><main id="app"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script type="module">
+import {TEAMS,PLACES,HOST_PIN} from "./config.js";
+const A=document.getElementById("app"),base=new URL("./",location.href).href;
+function show(){
+ A.innerHTML=`<h1 class="noprint">Print sheet</h1>
+ <p class="noprint">Cut along the dashed lines. Give each team only its own team code. Hide each place code at its spot, and keep this page away from the players.</p>
+ <h2>Team codes</h2><div class="g">${Object.entries(TEAMS).map(([c,t])=>`<div class="c"><div id="t-${c}"></div><b>${t.name}</b><small>Scan to join, or type: ${c}</small></div>`).join("")}</div>
+ <h2>Place codes</h2><div class="g">${Object.keys(PLACES).map(k=>`<div class="c"><div id="p-${k}"></div><small>Can’t scan? Type: ${k}</small></div>`).join("")}</div>
+ <p class="noprint"><button onclick="print()">Print</button></p>`;
+ for(const c in TEAMS)new QRCode(document.getElementById("t-"+c),{text:base+"?team="+c,width:150,height:150});
+ for(const k in PLACES)new QRCode(document.getElementById("p-"+k),{text:base+"#"+k,width:150,height:150});
+}
+if(sessionStorage.getItem("hp")===HOST_PIN)show();
+else{A.innerHTML=`<h1>Print sheet</h1><input id="p" inputmode="numeric" placeholder="Host PIN"> <button id="b">Enter</button>`;
+ document.getElementById("b").onclick=()=>{const v=document.getElementById("p").value;if(v===HOST_PIN){sessionStorage.setItem("hp",v);show()}else document.getElementById("p").value=""}}
+</script></body></html>
