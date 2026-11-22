@@ -15,19 +15,27 @@ export const db=getFirestore(initializeApp({
 export const HOST_PIN="1234";   // change this to your 4-digit PIN
 export const HINT_WAIT=120;     // seconds between hints
 
-// Each place gets one QR code. The place's key (e.g. "woods") is also its typed backup code.
+// Each place gets one QR code. The place key (e.g. "clock") is also its typed backup code.
+// "img" or "audio" points to the clue file in the clues folder. "clue" is optional text shown with it.
+// Hints are placeholders: replace them with your own.
 export const PLACES={
- mailbox:{clue:"I swallow letters but never speak. Find where the postman stops.",hints:["Think outside, near the street.","It often has a little flag on the side.","Check the mailbox!"]},
- fridge:{clue:"Cold on the inside, covered in magnets outside. Your next stop keeps something cool.",hints:["Think kitchen.","It hums quietly.","Look at the fridge!"]},
- woods:{clue:"Where the trees stand close and the path turns to leaves.",hints:["Head to the back of the property.","Look for the biggest tree.","Check the edge of the woods!"]},
- garage:{clue:"Wheels sleep here when they are not going anywhere.",hints:["Think big doors.","Where the car or bikes live.","Check inside the garage!"]},
- bench:{clue:"Rest your legs, then rest your eyes on what is underneath.",hints:["Somewhere to sit outside.","Wooden, probably.","Look under the bench!"]}
+ clock:{img:"clues/clock.png",clue:"",hints:["Look closely at the picture.","Think about where you would see this inside the house.","The answer is the clock."]},
+ deck:{audio:"clues/deck.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about the outdoors.","The answer is under the deck."]},
+ spout:{img:"clues/spout.png",clue:"",hints:["Look closely at the picture.","Think about where water comes out.","The answer is the water spout."]},
+ billiards:{audio:"clues/billiards.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about a game you play with a cue.","The answer is the billiards table."]},
+ woodshed:{img:"clues/woodshed.jpg",clue:"",hints:["Look closely at the picture.","Think about where logs are kept.","The answer is the woodshed."]},
+ fridge:{img:"clues/fridge.jpg",clue:"",hints:["Look closely at the picture.","Think about the kitchen.","The answer is the refrigerator."]},
+ oliveoil:{img:"clues/oliveoil.jpg",clue:"",hints:["Look closely at the picture.","Think about cooking.","The answer is the olive oil."]},
+ gate:{audio:"clues/gate.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about trains.","The answer is the crossing gate."]}
 };
-// Team login code -> name and the order of places (last one is the finish).
+// Team login code -> name and the order of places (the last one is where that team finishes).
+// Each team is offset around the same circle, so no two teams are ever at the same place at the same step.
+const ALL=["clock","deck","spout","billiards","woodshed","fridge","oliveoil","gate"];
+const spin=n=>ALL.slice(n).concat(ALL.slice(0,n));
 export const TEAMS={
- owl:{name:"Owls",route:["mailbox","fridge","woods","garage","bench"]},
- fox:{name:"Foxes",route:["fridge","woods","garage","bench","mailbox"]},
- bear:{name:"Bears",route:["woods","garage","bench","mailbox","fridge"]},
- wolf:{name:"Wolves",route:["garage","bench","mailbox","fridge","woods"]},
- hawk:{name:"Hawks",route:["bench","mailbox","fridge","woods","garage"]}
+ owl:{name:"Owls",route:spin(0)},
+ fox:{name:"Foxes",route:spin(2)},
+ bear:{name:"Bears",route:spin(3)},
+ wolf:{name:"Wolves",route:spin(5)},
+ hawk:{name:"Hawks",route:spin(6)}
 };
