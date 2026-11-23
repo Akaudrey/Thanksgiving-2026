@@ -30,8 +30,8 @@ h1{font:600 2.6rem/1 "Playfair Display",Georgia,serif;margin:0}
 .seg{display:flex;gap:.2rem;margin:.4rem 0}.seg i{flex:1;height:.55rem;background:#2a323f;border-radius:.2rem}
 small{color:var(--mu);font-size:.9rem}
 #chat{grid-column:3;grid-row:2;padding:1rem 1.2rem;display:flex;flex-direction:column}
-.ms{margin-top:auto;display:flex;flex-direction:column;gap:.5rem}
-.cm{font-size:1.2rem;padding:.45rem .8rem;background:rgba(255,255,255,.05);border-radius:.6rem}
+.ms{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;gap:.5rem}
+.cm{flex:none;font-size:1.2rem;padding:.45rem .8rem;background:rgba(255,255,255,.05);border-radius:.6rem}
 .cm.new{border-left:.25rem solid var(--ac);background:rgba(255,255,255,.09)}
 .sy{color:var(--mu);font-style:italic}
 #tiles{grid-column:2/4;grid-row:3;display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:1rem}
@@ -79,7 +79,7 @@ onSnapshot(collection(db,"latest"),s=>{LT={};s.docs.forEach(d=>LT[d.id]=d.data()
 
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 onSnapshot(query(collection(db,"chat"),orderBy("ts","desc"),limit(30)),s=>{CH=s.docs.map(d=>({id:d.id,...d.data()})).reverse();chat()});
-function chat(){const m=CH.slice(-8),el=$("chat");
+function chat(){const m=CH.slice(-12),el=$("chat");
  const nw=m.length&&m[m.length-1].id!==lastC;if(m.length)lastC=m[m.length-1].id;
  el.innerHTML=`<div class="lab">Trash talk</div><div class="ms">${m.length?m.map((x,i)=>`<div class="cm${i==m.length-1?" new"+(nw?" pop":""):""}">${x.sys?`<span class="sy">${esc(x.text)}</span>`:`<b style="color:${COL[x.team]||"#aaa"}">${esc(nameOf(x.team)||x.name)}</b> ${esc(x.text)}`}</div>`).join(""):`<div class="cm">Messages from the teams will show up here.</div>`}</div>`}
 
