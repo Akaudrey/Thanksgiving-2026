@@ -116,7 +116,7 @@ function tick(){const now=Date.now();
  if(cd){cd=false;return r()}
  if(!T||!$("tm"))return;
  $("tm").textContent=fmt((now-(T.t0||G.startAt))/1000);
- const b=$("hb");if(b){const w=T.h?HINT_WAIT-(now-T.th)/1000:0;b.disabled=w>0;b.textContent=w>0?"Next hint in "+fmt(w):"Need a hint?"}}
+ const b=$("hb");if(b){const w=HINT_WAIT-(now-(T.h?T.th:(T.t0||G.startAt)))/1000;b.disabled=w>0;b.textContent=w>0?(T.h?"Next hint in ":"First hint in ")+fmt(w):"Need a hint?"}}
 setInterval(tick,1000);
 
 function hg(){const h=location.hash.slice(1).toLowerCase();if(h){history.replaceState(null,"",location.pathname+location.search);pend=h;r()}}
