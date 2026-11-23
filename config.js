@@ -13,7 +13,7 @@ export const db=getFirestore(initializeApp({
 
 // ===== EDIT BELOW =====
 export const HOST_PIN="1234";   // change this to your 4-digit PIN
-export const HINT_WAIT=120;     // seconds between hints
+export const HINT_WAIT=180;     // seconds between hints
 
 // Each place gets one QR code. The place key (e.g. "clock") is also its typed backup code.
 // "img" or "audio" points to the clue file in the clues folder. "clue" is optional text shown with it.
