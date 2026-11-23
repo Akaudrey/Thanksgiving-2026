@@ -28,15 +28,18 @@ input[type=text],input:not([type]){width:100%;font:inherit;text-align:center;pad
 button.tz{display:inline-block;width:auto;font:500 .9rem Inter,sans-serif;padding:.4rem .8rem;margin:.25rem;border-radius:99px;background:var(--card);color:var(--fg);border:1px solid var(--bd)}
 button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;margin:0 0 0 .4rem}
 .hostcard{text-align:left}
+.flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 min(60vw,50vh) "Playfair Display",Georgia,serif;color:var(--ac);background:rgba(0,0,0,.5);z-index:20;pointer-events:none;animation:lf 3.5s ease forwards}
+@keyframes lf{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 </style></head><body><main id="app"></main>
 <script type="module">
-import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,runTransaction,query,orderBy,limit,PLACES,TEAMS,HINT_WAIT} from "./config.js";
+import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,runTransaction,query,orderBy,limit,PLACES,TEAMS,LETTERS,HINT_WAIT} from "./config.js";
 const $=i=>document.getElementById(i),A=$("app");
 const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
 const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'><g stroke='#3b1d0a' stroke-width='4' stroke-linejoin='round'><ellipse cx='100' cy='60' rx='17' ry='48' fill='#e63946' transform='rotate(-72 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ff8a1f' transform='rotate(-36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ffd23f'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2a9d4b' transform='rotate(36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2f80ed' transform='rotate(72 100 120)'/><ellipse cx='100' cy='135' rx='50' ry='42' fill='#9c5a2b'/><ellipse cx='100' cy='142' rx='30' ry='26' fill='#d9a066' stroke='none'/><circle cx='100' cy='100' r='30' fill='#9c5a2b'/><circle cx='88' cy='96' r='8' fill='#fff'/><circle cx='112' cy='96' r='8' fill='#fff'/><circle cx='90' cy='97' r='3.5' stroke='none'/><circle cx='110' cy='97' r='3.5' stroke='none'/><path d='M92 106h16l-8 14z' fill='#ffb703'/><path d='M97 120q-3 14 3 16q6-2 3-16z' fill='#e63946'/><rect x='80' y='44' width='40' height='32' rx='4' fill='#2b2b2b'/><rect x='80' y='64' width='40' height='9' fill='#ffd23f'/><rect x='68' y='72' width='64' height='9' rx='4' fill='#2b2b2b'/></g></svg>`;
 let code=localStorage.getItem("team"),G={},T=null,sel=null,note="",pend=null,unT=null,view="",built=false,CH=[];
 const ref=()=>doc(db,"teams",code);
 const yt=v=>{const m=String(v).match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);return m?m[1]:v};
+function flash(l){const d=document.createElement("div");d.className="flash";d.textContent=l;document.body.appendChild(d);setTimeout(()=>d.remove(),3600)}
 const nameNow=()=>(T&&T.name)||TEAMS[code].name;
 const fresh=()=>({name:TEAMS[code].name,named:false,needSelfie:false,i:0,t0:0,h:0,th:0,hintsTotal:0,times:[],photoDone:false,done:0});
 function listen(){if(unT)unT();unT=onSnapshot(ref(),s=>{if(!s.exists()){setDoc(ref(),fresh());return}T=s.data();r()})}
@@ -72,9 +75,9 @@ async function go(loc){
  if(loc===rt[T.i]){const now=Date.now(),at=T.i;
   const won=await runTransaction(db,async tx=>{const d=(await tx.get(ref())).data();if(d.i!==at)return false;const i=at+1;
    tx.update(ref(),{i,t0:now,h:0,th:0,needSelfie:true,times:[...d.times,now-(d.t0||G.startAt)],...(i>=rt.length?{done:now}:{})});return true});
-  if(won){note="";const i=at+1;sys(i>=rt.length?nameNow()+" finished the hunt!":nameNow()+" just found clue "+i+"!")}
-  else note="Your team already found this one. Check your current clue."}
- else if(rt.slice(0,T.i).includes(loc))note="Your team already found this one. Check your current clue."
+  if(won){note="";if(LETTERS[loc])flash(LETTERS[loc]);const i=at+1;sys(i>=rt.length?nameNow()+" finished the hunt!":nameNow()+" just found clue "+i+"!")}
+  else{note="Your team already found this one. Check your current clue.";if(LETTERS[loc])flash(LETTERS[loc])}}
+ else if(rt.slice(0,T.i).includes(loc)){note="Your team already found this one. Check your current clue.";if(LETTERS[loc])flash(LETTERS[loc])}
  else if(PLACES[loc])note="That’s not the spot for your current clue. Keep looking!";
  else note="Code not recognized. Check it and try again.";
  r()}

@@ -20,23 +20,33 @@ export const HINT_WAIT=120;     // seconds between hints
 // A video clue uses a YouTube link, for example:  video:"https://youtu.be/XXXXXXXXXXX"
 // Hints are placeholders: replace them with your own.
 export const PLACES={
- clock:{img:"clues/clock.png",clue:"",hints:["Look closely at the picture.","Think about where you would see this inside the house.","The answer is the clock."]},
- deck:{audio:"clues/deck.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about the outdoors.","The answer is under the deck."]},
- spout:{img:"clues/spout.png",clue:"",hints:["Look closely at the picture.","Think about where water comes out.","The answer is the water spout."]},
- billiards:{audio:"clues/billiards.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about a game you play with a cue.","The answer is the billiards table."]},
- woodshed:{img:"clues/woodshed.jpg",clue:"",hints:["Look closely at the picture.","Think about where logs are kept.","The answer is the woodshed."]},
- fridge:{img:"clues/fridge.jpg",clue:"",hints:["Look closely at the picture.","Think about the kitchen.","The answer is the refrigerator."]},
- oliveoil:{img:"clues/oliveoil.jpg",clue:"",hints:["Look closely at the picture.","Think about cooking.","The answer is the olive oil."]},
- gate:{audio:"clues/gate.wav",clue:"Listen closely.",hints:["Listen again, and listen carefully.","Think about trains.","The answer is the crossing gate."]},
- tractor:{video:"https://www.youtube.com/watch?v=b4Q_Iz5LUV8",clue:"Watch closely.",hints:["Watch the video again, closely.","Think about the farm or the yard.","The answer is the tractor."]}
+ clock:{img:"clues/clock.png",clue:"",hints:["Finish the rhyme", "It’s not digital"]},
+ deck:{audio:"clues/deck.wav",clue:"Listen closely.",hints:["Crack the code", "..- = U"]},
+ spout:{img:"clues/spout.png",clue:"",hints:["How big is the spider?", "It’s itsy bitsy"]},
+ billiards:{audio:"clues/billiards.wav",clue:"Listen closely.",hints:["Where would that sound come from", "Check the balls"]},
+ woodshed:{img:"clues/woodshed.jpg",clue:"",hints:["Say it out loud", "Say it fast", "Try saying “Whoosh” instead of “Watch”"]},
+ fridge:{img:"clues/fridge.jpg",clue:"",hints:["No need to read this one", "Rearrange the letters", "It’s one word"]},
+ oliveoil:{img:"clues/oliveoil.jpg",clue:"",hints:["Not Popeye", "Who’s the girl", "Find it in the house"]},
+ gate:{audio:"clues/gate.wav",clue:"Listen closely.",hints:["Hit the road", "Follow the sound", "Check the gate"]},
+ tractor:{video:"https://www.youtube.com/watch?v=b4Q_Iz5LUV8",clue:"Watch closely.",hints:["John Deere", "The John Deere lives in the pole barn", "Look carefully, it’s hidden on the tractor"]},
+ hoop:{img:"clues/hoop.jpg",clue:"",hints:["Not the ball", "Check the hoop"]},
+ miscanthus:{img:"clues/miscanthus.jpg",clue:"",hints:["The clue is hidden in the miscanthus", "Check the southeast corner"]},
+ mailbox:{img:"clues/mailbox.jpg",clue:"",hints:["Go back and re-scan the codes if you need to, but no need to go back to the railroad tracks"]}
 };
-// Team login code -> default name (teams pick their own) and the order of places (the last one is where that team finishes).
-// Each team is offset around the same circle, so no two teams are ever at the same place at the same step.
-const ALL=["clock","deck","spout","billiards","woodshed","fridge","oliveoil","gate","tractor"];
-const spin=n=>ALL.slice(n).concat(ALL.slice(0,n));
+
+// Letters that pop up when a team scans a place (and again if they rescan it later).
+// None at the crossing gate, since it is the farthest from the house. X comes at the miscanthus.
+export const LETTERS={deck:"B",fridge:"O",woodshed:"L",oliveoil:"I",clock:"A",hoop:"M",miscanthus:"X"};
+
+// Team login code -> default name (teams pick their own) and the order of places.
+// Every team visits the same ten middle places, starting at a different point around the circle,
+// and then all teams finish with the miscanthus and the mailbox.
+const MID=["clock","deck","spout","billiards","woodshed","fridge","oliveoil","gate","tractor","hoop"];
+const END=["miscanthus","mailbox"];
+const spin=n=>MID.slice(n).concat(MID.slice(0,n)).concat(END);
 export const TEAMS={
  team1:{name:"Team #1",route:spin(0)},
  team2:{name:"Team #2",route:spin(2)},
- team3:{name:"Team #3",route:spin(4)},
+ team3:{name:"Team #3",route:spin(5)},
  team4:{name:"Team #4",route:spin(7)}
 };
