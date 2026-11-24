@@ -1,36 +1,49 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Print sheet</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<title>Label sheet</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
 <style>
+@page{size:letter;margin:0}
 *{box-sizing:border-box}
-body{margin:0;font:400 16px/1.5 Inter,system-ui,sans-serif;color:#1f2430;background:#fff}
-main{max-width:52rem;margin:0 auto;padding:1.5rem}
-h1,h2{font-family:"Playfair Display",Georgia,serif;font-weight:600;margin:1.2rem 0 .4rem}
-.g{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
-.c{border:1px dashed #999;padding:.9rem;text-align:center;break-inside:avoid}
-.c>div{display:flex;justify-content:center;margin-bottom:.5rem}
-.c b{display:block;font-size:1.1rem}.c small{color:#555}
-input{font:inherit;padding:.6rem;border:1px solid #bbb;border-radius:8px}
-button{font:600 1rem Inter,sans-serif;padding:.6rem 1rem;border:0;border-radius:8px;background:#b4561b;color:#fff;cursor:pointer}
-@media print{.noprint{display:none}}
-@media(max-width:600px){.g{grid-template-columns:repeat(2,1fr)}}
-</style></head><body><main id="app"></main>
+body{margin:0;font:400 16px/1.5 Inter,system-ui,sans-serif;color:#1f2430;background:#e9e6e0}
+h1{font:600 1.8rem "Playfair Display",Georgia,serif;margin:0 0 .4rem}
+.ctl{padding:1rem 1.5rem;max-width:44rem;margin:0 auto;background:#fff}
+.ctl input{font:inherit;padding:.4rem;width:4.5rem;border:1px solid #bbb;border-radius:6px}
+.ctl button{font:600 1rem Inter,sans-serif;padding:.6rem 1.2rem;border:0;border-radius:8px;background:#b4561b;color:#fff;cursor:pointer;margin-left:.6rem}
+input#p{width:12rem}
+.sheet{width:8.5in;height:10.95in;padding:.5in 0 0 .1875in;display:grid;grid-template-columns:repeat(3,2.625in);grid-auto-rows:1in;column-gap:.125in;background:#fff;margin:1rem auto;overflow:hidden;break-after:page}
+.sheet:last-child{break-after:auto}
+.lb{display:flex;align-items:center;gap:.07in;height:1in;padding:.04in .06in;overflow:hidden;outline:1px dashed #ccc}
+.q{flex:none;width:.88in;height:.88in;background:#fff;padding:.05in}
+.q img,.q canvas{width:100%!important;height:100%!important;display:block}
+.tx{display:flex;flex-direction:column;line-height:1.15;font-size:8pt;color:#000;min-width:0}
+.tx b{font-size:10pt}.tx strong{font-size:12pt}
+@media print{body{background:#fff}.noprint{display:none}.lb{outline:0}.sheet{margin:0}}
+</style></head><body><div id="app"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
 import {TEAMS,PLACES,HOST_PIN} from "./config.js";
-const A=document.getElementById("app"),base=new URL("./",location.href).href;
+const A=document.getElementById("app"),$=i=>document.getElementById(i),base=new URL("./",location.href).href;
+let start=1;
+const items=[
+ ...Object.entries(TEAMS).map(([c,t])=>({id:"t-"+c,url:base+"?team="+c,top:t.name,line:"Scan to join, or type:",code:c})),
+ ...Object.keys(PLACES).map(k=>({id:"p-"+k,url:base+"#"+k,top:"",line:"Can’t scan? Type:",code:k}))];
 function show(){
- A.innerHTML=`<h1 class="noprint">Print sheet</h1>
- <p class="noprint">Cut along the dashed lines. Give each team only its own team code. Hide each place code at its spot, and keep this page away from the players.</p>
- <h2>Team codes</h2><div class="g">${Object.entries(TEAMS).map(([c,t])=>`<div class="c"><div id="t-${c}"></div><b>${t.name}</b><small>Scan to join, or type: ${c}</small></div>`).join("")}</div>
- <h2>Place codes</h2><div class="g">${Object.keys(PLACES).map(k=>`<div class="c"><div id="p-${k}"></div><small>Can’t scan? Type: ${k}</small></div>`).join("")}</div>
- <p class="noprint"><button onclick="print()">Print</button></p>`;
- for(const c in TEAMS)new QRCode(document.getElementById("t-"+c),{text:base+"?team="+c,width:150,height:150});
- for(const k in PLACES)new QRCode(document.getElementById("p-"+k),{text:base+"#"+k,width:150,height:150});
-}
-if(sessionStorage.getItem("hp")===HOST_PIN)show();
-else{A.innerHTML=`<h1>Print sheet</h1><input id="p" inputmode="numeric" placeholder="Host PIN"> <button id="b">Enter</button>`;
- document.getElementById("b").onclick=()=>{const v=document.getElementById("p").value;if(v===HOST_PIN){sessionStorage.setItem("hp",v);show()}else document.getElementById("p").value=""}}
+ const slots=Array(start-1).fill(null).concat(items),pages=[];
+ for(let i=0;i<slots.length;i+=30)pages.push(slots.slice(i,i+30));
+ A.innerHTML=`<div class="noprint ctl"><h1>Label sheet</h1>
+  <p>For Avery 5160 labels: 30 per sheet, 2⅝″ × 1″. There are ${items.length} labels (${Object.keys(TEAMS).length} team codes and ${Object.keys(PLACES).length} place codes).</p>
+  <p>In the print window, set <b>Paper</b> to Letter, <b>Scale</b> to 100% (not “fit to page”), and <b>Margins</b> to None. Print on plain paper first and hold it against a label sheet to check the alignment.</p>
+  <p>Using a partly used sheet? <label>Start at label # <input id="st" type="number" min="1" max="30" value="${start}"></label>
+  <button id="pr">Print</button></p>
+  <p>Keep this page away from the players: the labels show the place names.</p></div>`
+  +pages.map(p=>`<div class="sheet">${p.map(x=>x?`<div class="lb"><div class="q" id="${x.id}"></div><div class="tx">${x.top?`<b>${x.top}</b>`:""}<span>${x.line}</span><strong>${x.code}</strong></div></div>`:`<div class="lb"></div>`).join("")}</div>`).join("");
+ if(window.QRCode)items.forEach(x=>new QRCode($(x.id),{text:x.url,width:256,height:256,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}));
+ $("st").onchange=e=>{start=Math.min(30,Math.max(1,+e.target.value||1));show()};
+ $("pr").onclick=()=>print()}
+function gate(){
+ A.innerHTML=`<div class="ctl"><h1>Label sheet</h1><input id="p" inputmode="numeric" placeholder="Host PIN"><button id="b">Enter</button></div>`;
+ $("b").onclick=()=>{const v=$("p").value;if(v===HOST_PIN){sessionStorage.setItem("hp",v);show()}else $("p").value=""}}
+if(sessionStorage.getItem("hp")===HOST_PIN)show();else gate();
 </script></body></html>
