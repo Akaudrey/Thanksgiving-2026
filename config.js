@@ -25,7 +25,7 @@ export const PLACES={
  spout:{img:"clues/spout.png",clue:"",hints:["How big is the spider?", "It’s itsy bitsy"]},
  billiards:{audio:"clues/billiards.wav",clue:"Listen closely.",hints:["Where would that sound come from", "Check the balls"]},
  woodshed:{img:"clues/woodshed.jpg",clue:"",hints:["Say it out loud", "Say it fast", "Try saying “Whoosh” instead of “Watch”"]},
- fridge:{img:"clues/fridge.jpg",clue:"",hints:["No need to read this one", "Rearrange the letters", "It’s one word"]},
+ fridge:{img:"clues/fridge.jpg",clue:"",hints:["One word", "Rearrange the letters", "It’s in the house"]},
  oliveoil:{img:"clues/oliveoil.jpg",clue:"",hints:["Not Popeye", "Who’s the girl", "Find it in the house"]},
  gate:{audio:"clues/gate.wav",clue:"Listen closely.",hints:["Hit the road", "Follow the sound", "Check the gate"]},
  tractor:{video:"https://www.youtube.com/watch?v=b4Q_Iz5LUV8",clue:"Watch closely.",hints:["John Deere", "The John Deere lives in the pole barn", "Look carefully, it’s hidden on the tractor"]},
