@@ -32,7 +32,7 @@ button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;mar
 @keyframes lf{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
 </style></head><body><main id="app"></main>
 <script type="module">
-import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,runTransaction,query,orderBy,limit,PLACES,TEAMS,LETTERS,HINT_WAIT} from "./config.js";
+import {db,doc,collection,onSnapshot,setDoc,updateDoc,addDoc,increment,runTransaction,query,orderBy,limit,PLACES,TEAMS,LETTERS,BYCODE,HINT_WAIT} from "./config.js";
 const $=i=>document.getElementById(i),A=$("app");
 const fmt=s=>{s=Math.max(0,Math.floor(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
 const TURKEY=`<svg viewBox='0 0 200 190' role='img' aria-label='Cartoon turkey'><g stroke='#3b1d0a' stroke-width='4' stroke-linejoin='round'><ellipse cx='100' cy='60' rx='17' ry='48' fill='#e63946' transform='rotate(-72 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ff8a1f' transform='rotate(-36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#ffd23f'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2a9d4b' transform='rotate(36 100 120)'/><ellipse cx='100' cy='60' rx='17' ry='48' fill='#2f80ed' transform='rotate(72 100 120)'/><ellipse cx='100' cy='135' rx='50' ry='42' fill='#9c5a2b'/><ellipse cx='100' cy='142' rx='30' ry='26' fill='#d9a066' stroke='none'/><circle cx='100' cy='100' r='30' fill='#9c5a2b'/><circle cx='88' cy='96' r='8' fill='#fff'/><circle cx='112' cy='96' r='8' fill='#fff'/><circle cx='90' cy='97' r='3.5' stroke='none'/><circle cx='110' cy='97' r='3.5' stroke='none'/><path d='M92 106h16l-8 14z' fill='#ffb703'/><path d='M97 120q-3 14 3 16q6-2 3-16z' fill='#e63946'/><rect x='80' y='44' width='40' height='32' rx='4' fill='#2b2b2b'/><rect x='80' y='64' width='40' height='9' fill='#ffd23f'/><rect x='68' y='72' width='64' height='9' rx='4' fill='#2b2b2b'/></g></svg>`;
@@ -70,7 +70,7 @@ const shrink=f=>new Promise((ok,no)=>{const im=new Image();im.onerror=no;im.onlo
 async function snap(f,place){note="Sending photo…";r();
  try{const d={team:code,name:nameNow(),place,ts:Date.now(),img:await shrink(f)};await addDoc(collection(db,"photos"),d);await setDoc(doc(db,"latest",code),d);note="";r();return true}
  catch(e){note="Photo did not send. Try again.";r();return false}}
-async function go(loc){
+async function go(raw){const loc=BYCODE[raw];
  const rt=TEAMS[code].route;if(T.i>=rt.length)return;
  if(loc===rt[T.i]){const now=Date.now(),at=T.i;
   const won=await runTransaction(db,async tx=>{const d=(await tx.get(ref())).data();if(d.i!==at)return false;const i=at+1;
@@ -104,10 +104,10 @@ function r(){
   $("sf2").onchange=async e=>{const f=e.target.files[0];if(f&&await snap(f,"stop"))await updateDoc(ref(),{needSelfie:false,t0:Date.now()})};return}
  if(T.i>=rt.length){A.innerHTML=`<div class="t">${TURKEY}</div><h1>Gobble gobble! You found it!</h1>${msg}${sb()}<p>Total time: <b>${fmt((T.done-G.startAt)/1000)}</b></p><div class="card">${T.times.map((t,i)=>`<div>Clue ${i+1}: ${fmt(t/1000)}</div>`).join("")}</div><button id="ch">Trash talk</button>`;bs();$("ch").onclick=()=>{view="chat";built=false;r()};return}
  const P=PLACES[rt[T.i]];
- A.innerHTML=`<h2>${nm}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}${P.audio?`<audio controls preload="auto" src="${P.audio}"></audio>`:""}${P.video?`<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${yt(P.video)}?rel=0&playsinline=1" title="Video clue" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`:""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<button id="ch">Trash talk</button><p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" autocapitalize="none" autocomplete="off" placeholder="Place code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;
+ A.innerHTML=`<h2>${nm}: clue ${T.i+1} of ${rt.length}</h2>${msg}${sb()}<div class="card clue">${P.img?`<img src="${P.img}" alt="">`:""}${P.clue||""}${P.audio?`<audio controls preload="auto" src="${P.audio}"></audio>`:""}${P.video?`<div class="vid"><iframe src="https://www.youtube-nocookie.com/embed/${yt(P.video)}?rel=0&playsinline=1" title="Video clue" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe></div>`:""}</div><div class="mu">Time on this clue</div><div class="tm" id="tm">0:00</div>${P.hints.slice(0,T.h).map((h,i)=>`<div class="hint"><span class="mu">Hint ${i+1}</span><br>${h}</div>`).join("")}${T.h<P.hints.length?`<button id="hb"></button>`:""}<button id="ch">Trash talk</button><p class="mu">Found the spot? Scan its QR code, or type its code here:</p><input type="text" id="tc" inputmode="numeric" maxlength="8" autocomplete="off" placeholder="8-digit code"><button id="tg">Check</button><button class="g" id="sw">Switch team</button>`;
  bs();
  if($("hb"))$("hb").onclick=()=>{const at=T.h;runTransaction(db,async tx=>{const d=(await tx.get(ref())).data();if(d.h!==at)return;tx.update(ref(),{h:at+1,th:Date.now(),hintsTotal:(d.hintsTotal||0)+1})})};
- $("tg").onclick=()=>{pend=$("tc").value.trim().toLowerCase();if(pend)r()};
+ $("tg").onclick=()=>{pend=$("tc").value.replace(/\D/g,"");if(pend)r();else{note="Type the 8-digit code.";r()}};
  $("ch").onclick=()=>{view="chat";built=false;r()};$("sw").onclick=()=>{localStorage.removeItem("team");if(unT)unT();code=null;T=null;sel=null;note="";r()};
  tick()}
 let cd=false;

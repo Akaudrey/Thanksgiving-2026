@@ -23,13 +23,14 @@ input#p{width:12rem}
 </style></head><body><div id="app"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script type="module">
-import {TEAMS,PLACES,HOST_PIN} from "./config.js";
+import {TEAMS,PLACES,CODES,HOST_PIN} from "./config.js";
 const A=document.getElementById("app"),$=i=>document.getElementById(i),base=new URL("./",location.href).href;
 let start=1;
 const items=[
  ...Object.entries(TEAMS).map(([c,t])=>({id:"t-"+c,url:base+"?team="+c,top:t.name,line:"Scan to join, or type:",code:c})),
- ...Object.keys(PLACES).map(k=>({id:"p-"+k,url:base+"#"+k,top:"",line:"Can’t scan? Type:",code:k}))];
+ ...Object.keys(PLACES).map(k=>({id:"p-"+k,url:base+"#"+CODES[k],top:"",line:"Can’t scan? Type:",code:CODES[k],place:k}))];
 function show(){
+ const key=items.map((x,i)=>x.place?`<div>Sheet ${Math.floor((start-1+i)/30)+1}, label ${(start-1+i)%30+1}: <b>${x.place}</b> = ${x.code}</div>`:"").join("");
  const slots=Array(start-1).fill(null).concat(items),pages=[];
  for(let i=0;i<slots.length;i+=30)pages.push(slots.slice(i,i+30));
  A.innerHTML=`<div class="noprint ctl"><h1>Label sheet</h1>
@@ -37,7 +38,7 @@ function show(){
   <p>In the print window, set <b>Paper</b> to Letter, <b>Scale</b> to 100% (not “fit to page”), and <b>Margins</b> to None. Print on plain paper first and hold it against a label sheet to check the alignment.</p>
   <p>Using a partly used sheet? <label>Start at label # <input id="st" type="number" min="1" max="30" value="${start}"></label>
   <button id="pr">Print</button></p>
-  <p>Keep this page away from the players: the labels show the place names.</p></div>`
+  <p>Keep this page away from the players.</p><h2 style="font:600 1.2rem Inter,sans-serif;margin:1rem 0 .3rem">Host key (which label goes where)</h2>${key}</div>`
   +pages.map(p=>`<div class="sheet">${p.map(x=>x?`<div class="lb"><div class="q" id="${x.id}"></div><div class="tx">${x.top?`<b>${x.top}</b>`:""}<span>${x.line}</span><strong>${x.code}</strong></div></div>`:`<div class="lb"></div>`).join("")}</div>`).join("");
  if(window.QRCode)items.forEach(x=>new QRCode($(x.id),{text:x.url,width:256,height:256,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M}));
  $("st").onchange=e=>{start=Math.min(30,Math.max(1,+e.target.value||1));show()};

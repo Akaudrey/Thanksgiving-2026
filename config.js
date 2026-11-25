@@ -15,7 +15,7 @@ export const db=getFirestore(initializeApp({
 export const HOST_PIN="1234";   // change this to your 4-digit PIN
 export const HINT_WAIT=180;     // seconds between hints
 
-// Each place gets one QR code. The place key (e.g. "clock") is also its typed backup code.
+// Each place gets one QR code. Its 8-digit number (see CODES below) is also the typed backup code.
 // "img" or "audio" points to the clue file in the clues folder. "clue" is optional text shown with it.
 // A video clue uses a YouTube link, for example:  video:"https://youtu.be/XXXXXXXXXXX"
 // Hints are placeholders: replace them with your own.
@@ -33,6 +33,23 @@ export const PLACES={
  miscanthus:{img:"clues/miscanthus.jpg",clue:"",hints:["The clue is hidden in the miscanthus", "Check the southeast corner"]},
  mailbox:{img:"clues/mailbox.jpg",clue:"",hints:["Go back and re-scan the codes if you need to, but no need to go back to the railroad tracks"]}
 };
+
+// Random 8-digit code for each place. The QR codes and the typed backup both use these.
+export const CODES={
+ clock:"93437778",
+ deck:"79697937",
+ spout:"98899704",
+ billiards:"38471178",
+ woodshed:"69847870",
+ fridge:"62465284",
+ oliveoil:"36851824",
+ gate:"22760756",
+ tractor:"92508234",
+ hoop:"72824363",
+ miscanthus:"40465840",
+ mailbox:"93838129"
+};
+export const BYCODE=Object.fromEntries(Object.entries(CODES).map(([k,v])=>[v,k]));
 
 // Letters that pop up when a team scans a place (and again if they rescan it later).
 // None at the crossing gate, since it is the farthest from the house. X comes at the miscanthus.
