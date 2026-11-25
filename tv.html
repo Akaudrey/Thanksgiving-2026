@@ -49,9 +49,13 @@ body.wel #wel{display:flex}body.wel #app{display:none}
 .q img,.q canvas{width:100%!important;height:100%!important;display:block}
 .wn{font:600 2.2rem "Playfair Display",Georgia,serif}
 .wst{color:var(--mu);font-size:1.3rem}
+.rt{display:flex;align-items:center;gap:1.5rem}
+.aud{display:flex;align-items:center;gap:.8rem;text-align:right;color:var(--mu);font-size:1rem;line-height:1.25}
+#aq{background:#fff;padding:.3rem;border-radius:.5rem;width:6.4rem;height:6.4rem}
+#aq img,#aq canvas{width:100%!important;height:100%!important;display:block}
 </style></head><body class="wel">
 <div id="app">
- <header><div class="hd"><span id="logo"></span><h1>Thanksgiving Treasure Hunt</h1></div><div id="st"></div></header>
+ <header><div class="hd"><span id="logo"></span><h1>Thanksgiving Treasure Hunt</h1></div><div class="rt"><div id="st"></div><div class="aud"><div>Join the chat<br>Scan with your phone</div><div id="aq"></div></div></div></header>
  <div class="box" id="feat"></div>
  <div class="box" id="board"></div>
  <div class="box" id="chat"></div>
@@ -97,6 +101,7 @@ function names(){
  const cp=document.querySelector("#feat .cap");if(cp&&featTeam)cp.textContent=nameOf(featTeam)}
 function mode(){document.body.className=(G.tvMode==="board")?"":"wel"}
 $("logo2").innerHTML=TURKEY;buildWelcome();mode();
+if(window.QRCode)new QRCode($("aq"),{text:base+"chat.html",width:256,height:256,colorDark:"#000000",colorLight:"#ffffff",correctLevel:QRCode.CorrectLevel.M});
 
 function banner(t){const b=$("ban");b.textContent=t;b.style.display="flex";clearTimeout(bt);bt=setTimeout(()=>b.style.display="none",9000)}
 
