@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Photo album</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ec;--fg:#1f2430;--card:#fff;--ac:#b4561b;--acfg:#fff;--mu:#697082;--bd:#dcd6cb;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e8ebf0;--card:#1b212b;--ac:#e08a3c;--acfg:#1a1206;--mu:#8f98a8;--bd:#2c3441}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.5 Inter,system-ui,sans-serif;text-align:center}
+main{max-width:30rem;margin:0 auto;padding:1.25rem}
+h1,h2{font:600 2rem/1.15 "Playfair Display",Georgia,serif;margin:0 0 .5rem}h2{font-size:1.5rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:1rem;margin:1rem 0}
+.mu{color:var(--mu);font-size:.9rem}
+.btn,button{display:block;width:100%;font:600 1rem Inter,sans-serif;padding:.85rem;border:0;border-radius:10px;background:var(--ac);color:var(--acfg);cursor:pointer;margin:.6rem 0}
+button:active{opacity:.85}button:disabled{opacity:.4}
+button.g{background:none;color:var(--mu);font-weight:400;font-size:.9rem;width:auto;display:inline-block}
+input[type=text],input:not([type]){width:100%;font:inherit;text-align:center;padding:.8rem;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg)}
+.clue{font:500 1.3rem/1.4 "Playfair Display",Georgia,serif}.clue img{max-width:100%;border-radius:8px}.clue audio{width:100%;display:block;margin-top:.8rem}.vid{position:relative;aspect-ratio:16/9;margin-top:.8rem}.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:8px}
+.tm{font:600 2.2rem Inter,sans-serif;font-variant-numeric:tabular-nums}
+.hint{background:var(--card);border-left:3px solid var(--ac);border-radius:6px;padding:.5rem .8rem;margin:.6rem 0;text-align:left}
+.msg{background:var(--card);border:1px solid var(--ac);border-radius:10px;padding:.6rem;margin:1rem 0}
+.t svg{width:7rem;display:block;margin:0 auto .5rem}
+.cl{height:38vh;overflow-y:auto;padding:.6rem}
+.bub{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:.3rem .7rem;margin:.4rem 2rem .4rem 0;text-align:left}
+.bub.me{background:var(--ac);color:var(--acfg);border-color:var(--ac);margin:.4rem 0 .4rem 2rem}
+.sys{color:var(--mu);font-size:.85rem;margin:.3rem 0}
+button.tz{display:inline-block;width:auto;font:500 .9rem Inter,sans-serif;padding:.4rem .8rem;margin:.25rem;border-radius:99px;background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;margin:0 0 0 .4rem}
+.hostcard{text-align:left}
+.flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 min(60vw,50vh) "Playfair Display",Georgia,serif;color:var(--ac);background:rgba(0,0,0,.5);z-index:20;pointer-events:none;animation:lf 3.5s ease forwards}
+@keyframes lf{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+main{max-width:64rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(8rem,1fr));gap:.5rem;margin:.6rem 0 1.4rem}
+.grid img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;cursor:pointer;display:block;background:var(--card)}
+.top{display:flex;gap:.6rem;flex-wrap:wrap;justify-content:center}.top button{width:auto;padding:.6rem 1.2rem}
+.lbx{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;flex-direction:column;align-items:center;justify-content:center;gap:.6rem;z-index:30;padding:1rem}
+.lbx img{max-width:100%;max-height:78vh;border-radius:8px}
+.lbx .row{display:flex;gap:.6rem}.lbx .row a,.lbx .row button{width:auto;display:inline-block;padding:.6rem 1.2rem;text-decoration:none;font:600 1rem Inter,sans-serif;border-radius:10px;border:0;background:var(--ac);color:var(--acfg);cursor:pointer;margin:0}
+</style></head><body><main id="app"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script type="module">
+import {db,collection,getDocs,query,orderBy,HOST_PIN} from "./config.js";
+const $=i=>document.getElementById(i),A=$("app");
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const safe=s=>String(s).replace(/[^\w \-]+/g,"_").trim().replace(/\s+/g,"-")||"team";
+let groups=[];
+const fname=(g,p,i)=>safe(g.name)+"-"+(p.place==="team"?"team-photo":"photo-"+String(i).padStart(2,"0"))+".jpg";
+
+async function load(){
+ A.innerHTML=`<h1>Photo album</h1><p class="mu">Loading photos…</p>`;
+ try{
+  const [ps,ts]=await Promise.all([getDocs(query(collection(db,"photos"),orderBy("ts"))),getDocs(collection(db,"teams"))]);
+  const names={},by={};
+  ts.forEach(d=>names[d.id]=d.data().name);
+  ps.forEach(d=>{const p=d.data();(by[p.team]=by[p.team]||[]).push(p)});
+  groups=Object.keys(by).sort().map(c=>{const arr=by[c].sort((a,b)=>(b.place==="team")-(a.place==="team")||a.ts-b.ts);return{code:c,name:names[c]||arr[0].name||c,photos:arr}});
+  draw();
+ }catch(e){A.innerHTML=`<h1>Photo album</h1><p>Could not load the photos. Check your connection and the Firebase rules, then reload.</p>`}
+}
+function draw(){
+ const n=groups.reduce((s,g)=>s+g.photos.length,0);
+ A.innerHTML=`<h1>Photo album</h1><p class="mu">${n} photo${n==1?"":"s"} from ${groups.length} team${groups.length==1?"":"s"}. Tap a photo to enlarge it or save it.</p>
+ <div class="top"><button id="za">Download everything (zip)</button><button id="rl" style="background:var(--card);color:var(--fg);border:1px solid var(--bd)">Refresh</button></div><div id="zm" class="mu"></div>`+
+ (groups.map((g,gi)=>`<h2 style="margin-top:1.4rem">${esc(g.name)}</h2><div class="top"><button class="zt" data-g="${gi}">Download this team (zip)</button></div>
+  <div class="grid">${g.photos.map((p,i)=>`<img loading="lazy" src="${p.img}" alt="" data-g="${gi}" data-i="${i}">`).join("")}</div>`).join("")||`<p>No photos yet.</p>`)+
+ `<div class="lbx" id="lb"><img id="li" alt=""><div class="row"><a id="dl">Download</a><button id="lc">Close</button></div></div>`;
+ $("za").onclick=()=>zip(null);$("rl").onclick=load;
+ A.querySelectorAll(".zt").forEach(b=>b.onclick=()=>zip(+b.dataset.g));
+ A.querySelectorAll(".grid img").forEach(im=>im.onclick=()=>{const g=groups[+im.dataset.g],i=+im.dataset.i,p=g.photos[i];
+  $("li").src=p.img;$("dl").href=p.img;$("dl").download=fname(g,p,i);$("lb").style.display="flex"});
+ $("lc").onclick=()=>$("lb").style.display="none";$("lb").onclick=e=>{if(e.target.id==="lb")$("lb").style.display="none"};
+}
+async function zip(only){
+ const m=$("zm");
+ if(!window.JSZip){m.textContent="The zip tool did not load. Tap a photo and save them one at a time instead.";return}
+ m.textContent="Making the zip file…";
+ const z=new JSZip();
+ groups.forEach((g,gi)=>{if(only!==null&&gi!==only)return;const f=z.folder(safe(g.name));g.photos.forEach((p,i)=>f.file(fname(g,p,i),p.img.split(",")[1],{base64:true}))});
+ const blob=await z.generateAsync({type:"blob"});
+ const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=only===null?"treasure-hunt-photos.zip":safe(groups[only].name)+"-photos.zip";
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),30000);
+ m.textContent="Done. Check your downloads folder."}
+function gate(){A.innerHTML=`<h1>Photo album</h1><input type="text" id="p" inputmode="numeric" placeholder="Host PIN"><button id="b">Enter</button>`;
+ $("b").onclick=()=>{if($("p").value===HOST_PIN){sessionStorage.setItem("hp",HOST_PIN);load()}else $("p").value=""}}
+if(sessionStorage.getItem("hp")===HOST_PIN)load();else gate();
+</script></body></html>
