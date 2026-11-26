@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Clue check</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f1ec;--fg:#1f2430;--card:#fff;--ac:#b4561b;--acfg:#fff;--mu:#697082;--bd:#dcd6cb;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#12161d;--fg:#e8ebf0;--card:#1b212b;--ac:#e08a3c;--acfg:#1a1206;--mu:#8f98a8;--bd:#2c3441}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.5 Inter,system-ui,sans-serif;text-align:center}
+main{max-width:30rem;margin:0 auto;padding:1.25rem}
+h1,h2{font:600 2rem/1.15 "Playfair Display",Georgia,serif;margin:0 0 .5rem}h2{font-size:1.5rem}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:1rem;margin:1rem 0}
+.mu{color:var(--mu);font-size:.9rem}
+.btn,button{display:block;width:100%;font:600 1rem Inter,sans-serif;padding:.85rem;border:0;border-radius:10px;background:var(--ac);color:var(--acfg);cursor:pointer;margin:.6rem 0}
+button:active{opacity:.85}button:disabled{opacity:.4}
+button.g{background:none;color:var(--mu);font-weight:400;font-size:.9rem;width:auto;display:inline-block}
+input[type=text],input:not([type]){width:100%;font:inherit;text-align:center;padding:.8rem;border:1px solid var(--bd);border-radius:10px;background:var(--card);color:var(--fg)}
+.clue{font:500 1.3rem/1.4 "Playfair Display",Georgia,serif}.clue img{max-width:100%;border-radius:8px}.clue audio{width:100%;display:block;margin-top:.8rem}.vid{position:relative;aspect-ratio:16/9;margin-top:.8rem}.vid iframe{position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:8px}
+.tm{font:600 2.2rem Inter,sans-serif;font-variant-numeric:tabular-nums}
+.hint{background:var(--card);border-left:3px solid var(--ac);border-radius:6px;padding:.5rem .8rem;margin:.6rem 0;text-align:left}
+.msg{background:var(--card);border:1px solid var(--ac);border-radius:10px;padding:.6rem;margin:1rem 0}
+.t svg{width:7rem;display:block;margin:0 auto .5rem}
+.cl{height:38vh;overflow-y:auto;padding:.6rem}
+.bub{background:var(--bg);border:1px solid var(--bd);border-radius:12px;padding:.3rem .7rem;margin:.4rem 2rem .4rem 0;text-align:left}
+.bub.me{background:var(--ac);color:var(--acfg);border-color:var(--ac);margin:.4rem 0 .4rem 2rem}
+.sys{color:var(--mu);font-size:.85rem;margin:.3rem 0}
+button.tz{display:inline-block;width:auto;font:500 .9rem Inter,sans-serif;padding:.4rem .8rem;margin:.25rem;border-radius:99px;background:var(--card);color:var(--fg);border:1px solid var(--bd)}
+button.x{display:inline-block;width:auto;font-size:.8rem;padding:.1rem .5rem;margin:0 0 0 .4rem}
+.hostcard{text-align:left}
+.flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font:600 min(60vw,50vh) "Playfair Display",Georgia,serif;color:var(--ac);background:rgba(0,0,0,.5);z-index:20;pointer-events:none;animation:lf 3.5s ease forwards}
+@keyframes lf{0%{opacity:0;transform:scale(.6)}12%{opacity:1;transform:scale(1)}70%{opacity:1}100%{opacity:0}}
+</style></head><body><main id="app"></main>
+<script type="module">
+import {PLACES,CODES,LETTERS,TEAMS,HOST_PIN} from "./config.js";
+const A=document.getElementById("app"),$=i=>document.getElementById(i);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const set=(id,html,bad)=>{const e=$(id);if(e){e.innerHTML=html;e.style.color=bad?"#c0392b":"";}};
+function run(){
+ // route sanity
+ const keys=Object.keys(PLACES);
+ const routeRows=Object.entries(TEAMS).map(([c,t])=>{const r=t.route,miss=keys.filter(k=>!r.includes(k)),dup=r.filter((k,i)=>r.indexOf(k)!==i),unk=r.filter(k=>!PLACES[k]);
+  const ok=!miss.length&&!dup.length&&!unk.length;
+  return `<div>${esc(t.name)}: ${r.length} stops, ${ok?"every place exactly once":"PROBLEM: "+(miss.length?"missing "+miss.join(", ")+". ":"")+(dup.length?"repeated "+dup.join(", ")+". ":"")+(unk.length?"unknown "+unk.join(", ")+".":"")}</div>`}).join("");
+ const step=[...Array(Math.max(...Object.values(TEAMS).map(t=>t.route.length)))].map((_,i)=>new Set(Object.values(TEAMS).map(t=>t.route[i])).size===Object.keys(TEAMS).length);
+ A.innerHTML=`<h1>Clue check</h1><p class="mu">Tests that every clue file loads. Open this on a phone at the spots with weak signal too.</p>
+ <div class="card" style="text-align:left"><b>Routes</b>${routeRows}<div>Teams at different places at each of the first ${step.findIndex(x=>!x)<0?step.length:step.findIndex(x=>!x)} steps</div></div>`+
+ keys.map(k=>{const P=PLACES[k];
+  return `<div class="card" style="text-align:left"><b>${k}</b> <span class="mu">code ${CODES[k]||"MISSING"}${LETTERS[k]?", letter "+LETTERS[k]:""}</span>
+  ${P.img?`<div id="i-${k}" class="mu">Checking image…</div>`:""}${P.audio?`<div id="a-${k}" class="mu">Checking audio…</div>`:""}${P.video?`<div class="mu">Video: ${esc(P.video)} (play it on a phone to confirm it is not blocked)</div>`:""}
+  <div class="mu">${P.hints.length} hint${P.hints.length==1?"":"s"}: ${P.hints.map(esc).join(" / ")}</div></div>`}).join("");
+ keys.forEach(k=>{const P=PLACES[k];
+  if(P.img){const im=new Image();im.onload=()=>set("i-"+k,`Image OK (${im.naturalWidth}×${im.naturalHeight})`);im.onerror=()=>set("i-"+k,"Image MISSING or broken: "+P.img,1);im.src=P.img}
+  if(P.audio){fetch(P.audio,{method:"HEAD"}).then(r=>{if(!r.ok)throw 0;const mb=(r.headers.get("content-length")||0)/1048576;
+   const au=new Audio();au.preload="metadata";au.onloadedmetadata=()=>set("a-"+k,`Audio OK (${Math.round(au.duration)} sec${mb?", "+mb.toFixed(1)+" MB":""})${mb>3?" – large, may be slow on cell data":""}`);au.onerror=()=>set("a-"+k,"Audio file found but would not play: "+P.audio,1);au.src=P.audio}).catch(()=>set("a-"+k,"Audio MISSING: "+P.audio,1))}})}
+function gate(){A.innerHTML=`<h1>Clue check</h1><input type="text" id="p" inputmode="numeric" placeholder="Host PIN"><button id="b">Enter</button>`;
+ $("b").onclick=()=>{if($("p").value===HOST_PIN){sessionStorage.setItem("hp",HOST_PIN);run()}else $("p").value=""}}
+if(sessionStorage.getItem("hp")===HOST_PIN)run();else gate();
+</script></body></html>
