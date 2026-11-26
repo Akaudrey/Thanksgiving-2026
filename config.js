@@ -56,14 +56,13 @@ export const BYCODE=Object.fromEntries(Object.entries(CODES).map(([k,v])=>[v,k])
 export const LETTERS={deck:"B",fridge:"O",woodshed:"L",oliveoil:"I",clock:"A",hoop:"M",miscanthus:"X"};
 
 // Team login code -> default name (teams pick their own) and the order of places.
-// Every team visits the same ten middle places, starting at a different point around the circle,
-// and then all teams finish with the miscanthus and the mailbox.
-const MID=["clock","deck","spout","billiards","woodshed","fridge","oliveoil","gate","tractor","hoop"];
+// Each team visits the same ten places in its own order, then every team finishes with the miscanthus and the mailbox.
+// Rules used for these routes: every team starts outside (never at the gate), no two house clues
+// (clock, billiards, fridge, oliveoil) come back to back, and no two teams are at the same place at the same step.
 const END=["miscanthus","mailbox"];
-const spin=n=>MID.slice(n).concat(MID.slice(0,n)).concat(END);
 export const TEAMS={
- team1:{name:"Team #1",route:spin(0)},
- team2:{name:"Team #2",route:spin(2)},
- team3:{name:"Team #3",route:spin(5)},
- team4:{name:"Team #4",route:spin(7)}
+ team1:{name:"Team #1",route:["hoop","tractor","oliveoil","gate","fridge","spout","woodshed","billiards","deck","clock"].concat(END)},
+ team2:{name:"Team #2",route:["spout","clock","tractor","deck","billiards","woodshed","oliveoil","hoop","gate","fridge"].concat(END)},
+ team3:{name:"Team #3",route:["woodshed","spout","fridge","tractor","clock","deck","gate","oliveoil","hoop","billiards"].concat(END)},
+ team4:{name:"Team #4",route:["deck","billiards","hoop","fridge","gate","oliveoil","spout","clock","tractor","woodshed"].concat(END)}
 };
